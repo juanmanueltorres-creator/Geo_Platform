@@ -1,300 +1,216 @@
-=============================================================
-GEO-PLATFORM EXPLORATION DATABASE
-=============================================================
+# GEO-PLATFORM EXPLORATION DATABASE
 
 Production-style mineral exploration database architecture.
 
-Stack
--------------------------------------------------------------
-Database Engine:
-PostgreSQL
+## Stack
 
-Spatial Engine:
-PostGIS
+- **Database Engine:** PostgreSQL
+- **Spatial Engine:** PostGIS
+- **Architecture Goals:**
+  - Exploration Data Platform
+  - Geospatial Analytics
+  - Machine Learning Dataset
+  - Web API Integration
 
-Architecture Goal:
-Exploration Data Platform
-Geospatial Analytics
-Machine Learning Dataset
-Web API Integration
-
-
-=============================================================
-GEOLOGICAL MODEL
-=============================================================
+## Geological Model
 
 Synthetic Andean Au-dominant transitional system.
 
-Vertical system architecture:
+### Vertical system architecture
 
-    Epithermal Au–Ag zone
-            │
-            ▼
-      Phyllic alteration
-            │
-            ▼
-      Porphyry Cu–Au core
+```text
+Epithermal Au–Ag zone
+        │
+        ▼
+  Phyllic alteration
+        │
+        ▼
+  Porphyry Cu–Au core
+```
 
-Typical geochemical indicators:
+### Typical geochemical indicators
 
-Epithermal:
-Au
-Ag
-As
-Sb
-Pb
-Zn
+- **Epithermal:** Au, Ag, As, Sb, Pb, Zn
+- **Porphyry:** Cu, Mo, Fe, S
 
-Porphyry:
-Cu
-Mo
-Fe
-S
+## Database Design Principles
 
+- UUID primary keys
+- Interval-based geological modeling
+- `numrange` intervals
+- `EXCLUDE` constraints for overlap prevention
+- PostGIS spatial geometry
+- Normalized exploration schema
+- Separation between samples and assays
+- Interpretative geological domains
 
-=============================================================
-DATABASE DESIGN PRINCIPLES
-=============================================================
+## Core Data Model
 
-UUID primary keys
-Interval-based geological modeling
-numrange intervals
-EXCLUDE constraints for overlap prevention
-PostGIS spatial geometry
-Normalized exploration schema
-Separation between samples and assays
-Interpretative geological domains
-
-
-=============================================================
-CORE DATA MODEL
-=============================================================
-
+```text
 Company
- └── Project
-      ├── Drillholes
-      │     ├── Collars
-      │     ├── Surveys
-      │     └── Samples
-      │            ├── Assays
-      │            ├── Density
-      │            ├── Lithology
-      │            ├── Alteration
-      │            ├── Mineralization
-      │            └── Structures
-      │
-      └── Geological Domains
+└── Project
+    ├── Drillholes
+    │   ├── Collars
+    │   ├── Surveys
+    │   └── Samples
+    │       ├── Assays
+    │       ├── Density
+    │       ├── Lithology
+    │       ├── Alteration
+    │       ├── Mineralization
+    │       └── Structures
+    └── Geological Domains
+```
 
+## Repository Structure
 
-=============================================================
-REPOSITORY STRUCTURE
-=============================================================
-
-A:\ARQUITECTURA DE SOFTWARE\Geo-plataform
-
+```text
 database/
-    00_Extensions.sql
-    01_Multitenant.sql
-    02_core_drillholes.sql
-    03_sampling.sql
-    04_geochemistry.sql
-    05_geology.sql
-    06_structural.sql
-    07_domains.sql
-   
+  00_Extensions.sql
+  01_Multitenant.sql
+  02_core_drillholes.sql
+  03_sampling.sql
+  04_geochemistry.sql
+  05_geology.sql
+  06_structural.sql
+  07_domains.sql
+
 seeds/
-    01_reference_data
-    02_master_clean.sql
-    03_company_project.sql
-    04_drillholes.sql
-    05_samples.sql
-    06_assays.sql
-    07_lithology_generation.sql
-    08_alteration_generation.sql
-    09_mineralization_generation.sql
-    10_au_controlled_by_mineralization.sql
-    11_domains.sql
-    12_validation_queries.sql
-    13_geology_views.sql
+  01_reference_data.sql
+  02_MASTER_CLEAN.sql
+  03_COMPANY_PROJECT.sql
+  04_DRILLHOLES.sql
+  05_SAMPLES.sql
+  06_ASSAYS.sql
+  07_LITHOLOGY_GENERATION.sql
+  08_ALTERATION_GENERATION.sql
+  09_MINERALIZATION_GENERATION.sql
+  10_AU_CONTROLLED_BY_MINERALIZATION.sql
+  11_domains.sql
+  12_validation_queries.sql
+  13_geology_views.sql
 
 queries/
-    14_compositing_engine.sql
-    15_intersection_engine.sql
-    16_exploration_dashboard.sql
-    17_ml_dataset.sql
-    18_spatial_drillholes.sql
+  14_compositing_engine.sql
+  15_intersection_engine.sql
+  16_exploration_dashboard.sql
+  17_ml_dataset.sql
+  18_spatial_drillholes.sql
 
+api/
+  main.py
 
-=============================================================
-DATA GENERATION PIPELINE
-=============================================================
+web/
+  map.html
+```
 
-STEP 1   Base catalogs
-STEP 2   Database cleanup
-STEP 3   Company + Project
-STEP 4   Drillholes
-STEP 5   Samples
-STEP 6   Assays
-STEP 7   Lithology generation
-STEP 8   Alteration generation
-STEP 9   Mineralization generation
-STEP 10  Gold grade control
-STEP 11  Geological domains
-STEP 12  Validation queries
-STEP 13  Geological analytical views
+## Data Generation Pipeline
 
+1. Base catalogs
+2. Database cleanup
+3. Company + Project
+4. Drillholes
+5. Samples
+6. Assays
+7. Lithology generation
+8. Alteration generation
+9. Mineralization generation
+10. Gold grade control
+11. Geological domains
+12. Validation queries
+13. Geological analytical views
 
-=============================================================
-ANALYTICAL LAYER
-=============================================================
+## Analytical Layer
 
-v_sample_geology
+### `v_sample_geology`
 Integrated geological dataset combining:
+- Samples
+- Lithology
+- Alteration
+- Mineralization
+- Domains
+- Au assays
 
-samples
-lithology
-alteration
-mineralization
-domains
-Au assays
+### `v_drillhole_summary`
+Drillhole-level statistics:
+- `total_samples`
+- `average_Au`
+- `max_Au`
+- `total_depth`
 
-
-v_drillhole_summary
-Drillhole-level statistics.
-
-total_samples
-average_Au
-max_Au
-total_depth
-
-
-v_domain_statistics
+### `v_domain_statistics`
 Geological domain grade statistics.
 
+## Exploration Analytics
 
-=============================================================
-EXPLORATION ANALYTICS
-=============================================================
+### Downhole compositing engine
+- 5-meter composites generated from samples
+- View: `v_downhole_composites`
 
-Downhole compositing engine
+### High-grade intersection detection
+- Criteria:
+  - Au ≥ 1 g/t
+  - Thickness ≥ 2 m
+- View: `v_high_grade_intersections`
 
-5 meter composites generated from samples.
+### Exploration dashboard
+- Project-level metrics
+- View: `v_project_dashboard`
 
-view:
-v_downhole_composites
+## Machine Learning Dataset
 
-
-High grade intersection detection
-
-criteria:
-
-Au ≥ 1 g/t
-Thickness ≥ 2 m
-
-view:
-v_high_grade_intersections
-
-
-Exploration dashboard
-
-project-level metrics.
-
-view:
-v_project_dashboard
-
-
-=============================================================
-MACHINE LEARNING DATASET
-=============================================================
-
-view:
-v_ml_dataset
-
-fields:
-
-mid_depth
-lithology
-alteration
-mineralization
-domain
-au_grade
+- View: `v_ml_dataset`
+- Fields:
+  - `mid_depth`
+  - `lithology`
+  - `alteration`
+  - `mineralization`
+  - `domain`
+  - `au_grade`
 
 Designed for direct use in:
+- Python
+- GeoPandas
+- scikit-learn
 
-Python
-GeoPandas
-scikit-learn
+## Spatial Data
 
+- PostGIS drillhole collar geometry
+- View: `v_drillhole_locations`
+- CRS: `EPSG:4326`
 
-=============================================================
-SPATIAL DATA
-=============================================================
+## Simulated Dataset
 
-PostGIS drillhole collar geometry.
+- 4 drillholes
+- ~1200 samples
+- Au and Cu assays
+- Synthetic lithology logs
+- Alteration zonation
+- Mineralization intervals
+- Domain modeling
 
-view:
+## Industry Parallels
 
-v_drillhole_locations
-
-CRS:
-
-EPSG:4326
-
-
-=============================================================
-SIMULATED DATASET
-=============================================================
-
-4 drillholes
-~1200 samples
-Au and Cu assays
-synthetic lithology logs
-alteration zonation
-mineralization intervals
-domain modeling
-
-
-=============================================================
-INDUSTRY PARALLELS
-=============================================================
-
-The architecture follows concepts used in professional
-mineral exploration data platforms.
+The architecture follows concepts used in professional mineral exploration data platforms.
 
 Comparable workflows exist in:
+- Leapfrog Geo
+- Micromine
+- Datamine
+- Seequent Central
+- acQuire GIM Suite
 
-Leapfrog Geo
-Micromine
-Datamine
-Seequent Central
-acQuire GIM Suite
+This system is implemented using open-source technologies.
 
+## Future Development
 
-The difference is that this system is implemented using
-open-source technologies.
+- **API layer:** FastAPI
+- **Web mapping:** Leaflet, Mapbox
+- **Data science:** Python, GeoPandas, scikit-learn
 
+## Pipeline Summary
 
-=============================================================
-FUTURE DEVELOPMENT
-=============================================================
-
-API layer
-FastAPI
-
-Web mapping
-Leaflet
-Mapbox
-
-Data science
-Python
-GeoPandas
-scikit-learn
-
-
-=============================================================
-PIPELINE SUMMARY
-=============================================================
-
+```text
 PostgreSQL + PostGIS
         │
         ▼
@@ -320,4 +236,3 @@ REST API
         │
         ▼
 Web Visualization
-
