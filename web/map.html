@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <title>GeoPlatform Drillholes</title>
+  <title>GeoPlatform Drillholes Explorer</title>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet"
@@ -13,14 +13,116 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    body {
+    * {
       margin: 0;
-      font-family: Arial, sans-serif;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f5f5;
     }
 
     #map {
       height: 100vh;
       width: 100%;
+      position: relative;
+    }
+
+    /* Header */
+    .header {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 15px 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 1000;
+      max-width: 350px;
+    }
+
+    .header h1 {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .loader {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #3498db;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .status {
+      padding: 8px 12px;
+      border-radius: 3px;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    .status.loading {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .status.success {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .status.error {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    /* Info panel */
+    .info-panel {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: white;
+      padding: 15px 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 1000;
+      max-width: 300px;
+      font-size: 12px;
+    }
+
+    .info-panel h3 {
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    .tooltip {
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+
+    /* Attribution */
+    .leaflet-attribution {
+      font-size: 11px;
     }
   </style>
 </head>
@@ -29,16 +131,38 @@
 
   <div id="map"></div>
 
+  <!-- Header -->
+  <div class="header">
+    <h1>🌍 GeoPlatform Explorer</h1>
+    <p>Mineral Exploration Platform v2.0</p>
+    <div class="status loading">
+      <span class="loader"></span> Cargando drillholes...
+    </div>
+  </div>
+
+  <!-- Info Panel -->
+  <div class="info-panel">
+    <h3>ℹ️ Información</h3>
+    <p><strong>Total drillholes:</strong> <span id="count">-</span></p>
+    <p><strong>API:</strong> Render (Production)</p>
+    <p><strong>DB:</strong> Supabase PostGIS</p>
+    <p style="margin-top: 10px; font-size: 11px; color: #999;">
+      Click en un drillhole para ver detalles
+    </p>
+  </div>
+
   <script>
 
-    // -----------------------------
+    const API_URL = "https://geo-plataform.onrender.com"
+
+    // =============================
     // INIT MAP
-    // -----------------------------
+    // =============================
     const map = L.map('map').setView([-31.534, -68.536], 12)
 
-    // -----------------------------
+    // =============================
     // BASEMAP
-    // -----------------------------
+    // =============================
     L.tileLayer(
       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       {
@@ -47,14 +171,14 @@
       }
     ).addTo(map)
 
-    // -----------------------------
+    // =============================
     // FETCH GEOJSON FROM API
-    // -----------------------------
-    fetch("https://geo-plataform.onrender.com/geospatial/drillhole-locations")
+    // =============================
+    fetch(`${API_URL}/geospatial/drillhole-locations`)
 
       .then(response => {
         if (!response.ok) {
-          throw new Error("Error en la API")
+          throw new Error(`API error: ${response.status}`)
         }
         return response.json()
       })
@@ -63,41 +187,97 @@
 
         console.log("GeoJSON recibido:", data)
 
-        // -----------------------------
+        // Update header status
+        document.querySelector('.status').classList.remove('loading')
+        document.querySelector('.status').classList.add('success')
+        document.querySelector('.status').innerHTML = `✓ ${data.count || data.features.length} drillholes cargados`
+
+        // Update info panel
+        document.getElementById('count').textContent = data.count || data.features.length
+
+        // =============================
         // GEOJSON LAYER
-        // -----------------------------
-        const drillholes = L.geoJSON(data, {
+        // =============================
+        const drillholes = L.geoJSON(data.features, {
 
           pointToLayer: (feature, latlng) => {
             return L.circleMarker(latlng, {
-              radius: 6,
-              color: "#000",
-              weight: 1,
+              radius: 7,
+              color: "#1f77b4",
+              weight: 2,
               fillColor: "#ff7800",
-              fillOpacity: 0.9
+              fillOpacity: 0.85,
+              className: "drillhole-marker"
             })
           },
 
           onEachFeature: (feature, layer) => {
-            layer.bindPopup(
-              `<b>Drillhole:</b> ${feature.properties.drillhole}`
-            )
+            const props = feature.properties
+
+            // Rich popup
+            const popup = `
+              <div style="font-size: 12px; width: 250px;">
+                <h4 style="margin: 0 0 10px 0; color: #1f77b4;">
+                  ${props.hole_id || props.drillhole || 'N/A'}
+                </h4>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 5px; font-weight: bold;">Drillhole:</td>
+                    <td style="padding: 5px;">${props.drillhole || 'N/A'}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 5px; font-weight: bold;">Max Depth:</td>
+                    <td style="padding: 5px;">${props.max_depth ? props.max_depth.toFixed(1) + ' m' : 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 5px; font-weight: bold;">Coord:</td>
+                    <td style="padding: 5px; font-size: 11px;">
+                      ${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}
+                    </td>
+                  </tr>
+                </table>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
+                  <a href="${API_URL}/drillholes/${props.hole_id}/assays" target="_blank" 
+                     style="color: #1f77b4; text-decoration: none; font-size: 11px;">
+                    📊 Ver Assays →
+                  </a>
+                </div>
+              </div>
+            `
+
+            layer.bindPopup(popup)
+
+            // Tooltip
+            layer.bindTooltip(props.drillhole || props.hole_id, {
+              permanent: false,
+              direction: 'top',
+              offset: [0, -10]
+            })
           }
 
         }).addTo(map)
 
-        // -----------------------------
+        // =============================
         // AUTO ZOOM
-        // -----------------------------
-        if (drillholes.getBounds().isValid()) {
-          map.fitBounds(drillholes.getBounds())
+        // =============================
+        if (drillholes.getLayers().length > 0) {
+          const bounds = drillholes.getBounds()
+          if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [50, 50] })
+          }
         }
 
       })
 
       .catch(error => {
         console.error("Error:", error)
-        alert("Error cargando datos desde la API")
+        
+        // Update header status
+        document.querySelector('.status').classList.remove('loading')
+        document.querySelector('.status').classList.add('error')
+        document.querySelector('.status').innerHTML = `✗ Error: ${error.message}`
+        
+        alert(`Error cargando datos desde la API:\n${error.message}`)
       })
 
   </script>
