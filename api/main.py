@@ -439,6 +439,7 @@ def drillhole_locations():
 
         cur.execute("""
             SELECT
+                drillhole_id,
                 hole_id,
                 drillhole_name,
                 ST_AsGeoJSON(geom) AS geom,
