@@ -1,8 +1,8 @@
-# 🌍 GEO-PLATFORM v2.0
+# 🌍 GEO-PLATFORM v3.0
 
-Production-ready mineral exploration database and interactive geospatial API platform.
+Production-ready mineral exploration database with modern React frontend and interactive geospatial API platform.
 
-**Status:** ✅ **Live in Production** | Last Update: March 2026
+**Status:** ✅ **Fully Live in Production** | Last Update: March 2026 | **v3.0 Frontend Deployed ✨**
 
 ## Stack
 
@@ -31,9 +31,10 @@ Synthetic Andean Au-dominant transitional system with real exploration data.
 
 **Dataset:** 4 Drillholes | ~1,200 Samples | 682 Assay Results | Lithology, Alteration, Mineralization Logs
 
-## Production API (v2.0)
+## Production Deployment (v3.0)
 
-**Base URL:** `https://geo-plataform.onrender.com`
+**Backend API:** `https://geo-plataform.onrender.com`  
+**Frontend Web:** `https://geo-platform-axhipqo2p-juanmanueltorres-creators-projects.vercel.app`
 
 ### Core Endpoints
 
@@ -73,34 +74,36 @@ Synthetic Andean Au-dominant transitional system with real exploration data.
 - **Assay Filtering:** `element=Au&from_depth=0&to_depth=100`
 - **CRS:** All spatial data in EPSG:4326
 
-## Web Interface (v3.0)
+## Web Interface (v3.0) ✨
 
-**Interactive Explorer:** React + Shadcn/ui with Dark Mode
+**Interactive Explorer:** React 18 + TypeScript + Vite + Shadcn/ui with Dark Mode
+
+**Live:** https://geo-platform-axhipqo2p-juanmanueltorres-creators-projects.vercel.app
 
 ### Features
-- 🗺️ Real-time drillhole locations (React-Leaflet)
-- 📍 Click popups with interactive data
-- 📊 Drillhole summary with Au statistics
-- 🌙 Dark/Light mode toggle
-- ⚡ Type-safe API integration (TypeScript)
+- 🗺️ Real-time drillhole locations (React-Leaflet 4.2)
+- 📍 Click popups with interactive data + coordinates
+- 📊 Drillhole summary stats using NEW `/drillholes/{id}/summary` endpoint
+- 📈 Interactive Assay charts (Recharts) with Au vs depth
+- 🌙 Dark/Light mode toggle with persistence
+- ⚡ Type-safe API integration (TypeScript + Axios)
 - 📱 Responsive design (Tailwind CSS)
-- 🎨 Modern UI with Shadcn/ui components
+- 🎨 Professional UI with Shadcn/ui components
+- ⚡ Ultra-fast builds (Vite 5.4.21)
 
-### Getting Started
+### Local Development
 
 ```bash
 cd web
-npm install
-npm run dev
+npm install  # 304 packages
+npm run dev  # Opens http://localhost:3000
 ```
 
-Opens at `http://localhost:3000`
-
-### Build & Deploy
+### Production Build
 
 ```bash
-npm run build
-# Upload dist/ to hosting
+npm run build  # Creates optimized dist/
+# Auto-deployed to Vercel on git push
 ```
 
 ### Vertical system architecture
@@ -371,7 +374,7 @@ Synthetic exploration database built for educational and demonstration purposes.
 
 ---
 
-**Last Updated:** March 2026 | **API Status:** ✅ Live | **Version:** 2.0
+**Last Updated:** March 2026 | **Backend:** ✅ Live on Render | **Frontend:** ✅ Live on Vercel | **Version:** 3.0
 - acQuire GIM Suite
 
 This system is implemented using open-source technologies.

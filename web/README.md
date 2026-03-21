@@ -2,6 +2,8 @@
 
 Modern React + Vite frontend for GEO-PLATFORM mineral exploration database.
 
+**Live:** https://geo-platform-axhipqo2p-juanmanueltorres-creators-projects.vercel.app
+
 ## 🚀 Features
 
 - ⚛️ **React 18** with TypeScript
@@ -88,20 +90,26 @@ src/
 
 ## 📡 API Integration
 
-All API calls via `/src/lib/api.ts`:
+All API calls via `/src/lib/api.ts` (Type-safe with TypeScript):
 
 ```typescript
 import { api } from '@/lib/api'
 
-// Get drillhole locations
-const data = await api.getDrillholeLocations()
+// Get all drillhole locations
+const locations = await api.getDrillholeLocations()
 
-// Get summary stats (NEW ENDPOINT)
+// Get summary stats (NEW ENDPOINT - `/drillholes/{id}/summary`)
 const summary = await api.getDrillholeSummary(drillholeId)
+// Returns: { drillhole_id, total_samples, avg_au, max_au }
 
-// Get assays
-const assays = await api.getAssays(drillholeId, element)
+// Get assays with filtering
+const assays = await api.getAssays(drillholeId, 'Au')
+
+// Get lithology
+const lithology = await api.getLithology(drillholeId)
 ```
+
+**Backend:** https://geo-plataform.onrender.com
 
 ## 🌙 Dark Mode
 
