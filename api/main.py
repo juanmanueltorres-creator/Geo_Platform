@@ -41,14 +41,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
+    allow_origin_regex=r"^https://.*\.vercel\.app$|^http://localhost.*",
     allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:5173",
         "https://geo-plataform.onrender.com",
         "https://geo-platform-cyan.vercel.app",
-        "https://geo-platform-axhipqo2p-juanmanueltorres-creators-projects.vercel.app",
-        "https://geo-platform-h9ozmfvb7-juanmanueltorres-creators-projects.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
