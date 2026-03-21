@@ -41,7 +41,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ⚠️ RESTRICT IN PRODUCTION
+    allow_origins=[
+        "http://localhost:3000",
+        "https://geo-plataform.onrender.com",
+        "https://geo-platform-axhipqo2p-juanmanueltorres-creators-projects.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
