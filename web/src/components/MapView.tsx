@@ -6,9 +6,10 @@ import 'leaflet/dist/leaflet.css'
 
 interface MapViewProps {
   onDrillholeSelect?: (drillhole: Drillhole) => void
+  onDrillholesLoaded?: (drillholes: Drillhole[]) => void
 }
 
-export function MapView({ onDrillholeSelect }: MapViewProps) {
+export function MapView({ onDrillholeSelect, onDrillholesLoaded }: MapViewProps) {
   const [drillholes, setDrillholes] = useState<Drillhole[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -26,6 +27,7 @@ export function MapView({ onDrillholeSelect }: MapViewProps) {
           geometry: feature.geometry
         }))
         setDrillholes(holes)
+        onDrillholesLoaded?.(holes)
         setError(null)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error loading map')

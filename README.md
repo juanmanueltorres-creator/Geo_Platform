@@ -1,8 +1,20 @@
 # 🌍 GEO-PLATFORM v3.0
 
-Production-ready mineral exploration database with modern React frontend and interactive geospatial API platform.
+**En 5 segundos:** Una plataforma interactiva donde geólogos exploran datos de perforaciones (drillholes), muestras y ensayos de oro en tiempo real. 
+
+🎯 **Lo que puedes hacer:**
+- 📍 Ver perforaciones en el mapa
+- 💰 Revisar resultados de oro por pozo  
+- 📊 Analizar patrones de minerales
+- 📈 Gráficos de profundidad vs. oro
+
+🚀 **[Explorar ahora](https://geo-platform-axhipqo2p-juanmanueltorres-creators-projects.vercel.app)** | 🔧 **[API Docs](https://geo-plataform.onrender.com)**
+
+---
 
 **Status:** ✅ **Fully Live in Production** | Last Update: March 2026 | **v3.0 Frontend Deployed ✨**
+
+Production-ready mineral exploration database with modern React frontend and interactive geospatial API platform.
 
 ## Stack
 
@@ -86,10 +98,32 @@ Synthetic Andean Au-dominant transitional system with real exploration data.
 - 📊 Drillhole summary stats using NEW `/drillholes/{id}/summary` endpoint
 - 📈 Interactive Assay charts (Recharts) with Au vs depth
 - 🌙 Dark/Light mode toggle with persistence
+- ✨ **NEW** Hero section with instant project context (5-second overview)
+- 🔍 **NEW** Search & Filter panel for drillhole discovery
+- 🏆 **NEW** Top Drillholes ranking by Au grade (premium visualization)
 - ⚡ Type-safe API integration (TypeScript + Axios)
 - 📱 Responsive design (Tailwind CSS)
 - 🎨 Professional UI with Shadcn/ui components
 - ⚡ Ultra-fast builds (Vite 5.4.21)
+
+### 🎯 New Components (v3.0 Update)
+
+**HeroSection** — Instant project context with:
+- Clear 5-second value proposition
+- Visual feature highlights with icons
+- Dataset overview metrics
+
+**SearchFilter** — Smart discovery panel featuring:
+- Drillhole name search with real-time filtering
+- Au grade range slider (dual handle)
+- Min/Max ppb visual feedback
+- Reset filters button
+
+**TopDrillholes** — Premium ranking visualization:
+- Ranked list of top 4 drillholes by max Au
+- Visual progress bars normalized to highest value
+- Sample counts & average Au grades per hole
+- Click-to-select integration with map & charts
 
 ### Local Development
 
