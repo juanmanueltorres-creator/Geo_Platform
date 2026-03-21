@@ -117,6 +117,7 @@ def root():
         "endpoints": {
             "health": "/health",
             "drillholes": "/drillholes (?project_id=, ?limit=, ?offset=)",
+            "drillhole_summary": "/drillholes/{id}/summary",
             "drillhole_assays": "/drillholes/{id}/assays (?element=)",
             "drillhole_lithology": "/drillholes/{id}/lithology (?from_depth=, ?to_depth=)",
             "geospatial_locations": "/geospatial/drillhole-locations",
@@ -319,6 +320,78 @@ def get_assays(
         raise HTTPException(
             status_code=500,
             detail="Error fetching assay data"
+        )
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            db_pool.putconn(conn)
+
+# =============================
+# DRILLHOLE SUMMARY (Au stats)
+# =============================
+
+@app.get("/drillholes/{drillhole_id}/summary")
+def get_drillhole_summary(drillhole_id: str):
+    """
+    Get summary statistics for a drillhole.
+    
+    Returns:
+    - `total_samples`: Count of samples in drillhole
+    - `avg_au`: Average gold (Au) value across all samples
+    - `max_au`: Maximum gold (Au) value observed
+    """
+    
+    conn = None
+    cur = None
+
+    try:
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        # Query to get summary stats on Au
+        summary_query = """
+            SELECT 
+                COUNT(DISTINCT s.id) AS total_samples,
+                AVG(CASE WHEN UPPER(e.symbol) = 'AU' THEN ar.value ELSE NULL END) AS avg_au,
+                MAX(CASE WHEN UPPER(e.symbol) = 'AU' THEN ar.value ELSE NULL END) AS max_au
+            FROM samples s
+            LEFT JOIN assay_results ar ON s.id = ar.sample_id
+            LEFT JOIN elements e ON ar.element_id = e.id
+            WHERE s.drillhole_id = %s
+        """
+        
+        cur.execute(summary_query, [drillhole_id])
+        result = cur.fetchone()
+
+        if not result:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Drillhole {drillhole_id} not found"
+            )
+
+        total_samples = result["total_samples"] or 0
+        avg_au = float(result["avg_au"]) if result["avg_au"] else None
+        max_au = float(result["max_au"]) if result["max_au"] else None
+
+        logger.info(f"Summary for {drillhole_id}: {total_samples} samples, avg_au={avg_au}, max_au={max_au}")
+        
+        return {
+            "drillhole_id": drillhole_id,
+            "total_samples": total_samples,
+            "avg_au": avg_au,
+            "max_au": max_au
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(f"Error fetching summary for {drillhole_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Error fetching drillhole summary"
         )
 
     finally:
