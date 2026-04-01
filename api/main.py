@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 
 import psycopg2
@@ -6,6 +6,7 @@ import psycopg2.extras
 from psycopg2 import pool
 import json
 import os
+import secrets
 import logging
 from dotenv import load_dotenv
 
@@ -703,7 +704,42 @@ def drillholes_geojson():
 # DEBUG & UTILITY
 # =============================
 
-@app.get("/debug-db")
+def require_admin_token(
+    x_admin_token: str = Header(None, alias="X-Admin-Token"),
+    authorization: str = Header(None, alias="Authorization"),
+):
+    """Require ADMIN_TOKEN env var to match provided header.
+
+    Accepts either `X-Admin-Token: <token>` or `Authorization: Bearer <token>`.
+    Returns 401 on missing/incorrect token without revealing configuration state.
+    """
+    expected = os.getenv("ADMIN_TOKEN")
+
+    # Extract token from Authorization header if present
+    token = None
+    if authorization:
+        lower = authorization.lower()
+        if lower.startswith("bearer "):
+            token = authorization.split(" ", 1)[1].strip()
+        else:
+            token = authorization
+
+    # Prefer explicit X-Admin-Token header when provided
+    if x_admin_token:
+        token = x_admin_token
+
+    # Do not reveal whether ADMIN_TOKEN is configured; always return generic 401
+    if not token or not expected:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Use constant-time comparison
+    if not secrets.compare_digest(token, expected):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    return True
+
+
+@app.get("/debug-db", dependencies=[Depends(require_admin_token)])
 def debug_db():
     """Database connection diagnostics (remove in production)"""
     try:
