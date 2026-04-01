@@ -17,3 +17,4 @@ node_modules/
 # Entorno virtual de Python
 api/venv/
 .env
+api/.env

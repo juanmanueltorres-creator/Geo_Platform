@@ -67,7 +67,13 @@ def init_pool():
     keeps running and individual endpoints return 503 as needed.
     """
     global db_pool
-    dsn = os.getenv("DATABASE_URL") or "postgresql://postgres:postgres@localhost:5433/geoplatform"
+    dsn = os.getenv("DATABASE_URL")
+    if not dsn:
+        logger.error(
+            "DATABASE_URL is not set — skipping pool initialization. "
+            "Set DATABASE_URL in your environment or api/.env file."
+        )
+        return  # db_pool stays None; endpoints will return 503
     retries = int(os.getenv("DB_CONN_RETRIES", "3"))
     backoff = float(os.getenv("DB_CONN_RETRY_BACKOFF", "2.0"))
     minconn = int(os.getenv("DB_POOL_MIN", "1"))
