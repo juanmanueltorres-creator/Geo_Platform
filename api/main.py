@@ -6,7 +6,9 @@ import psycopg2.extras
 from psycopg2 import pool
 import json
 import os
+import random
 import secrets
+import time
 import logging
 from dotenv import load_dotenv
 
@@ -59,44 +61,76 @@ app.add_middleware(
 db_pool = None
 
 def init_pool():
-    """Initialize connection pool at startup"""
+    """Initialize connection pool with retries and exponential backoff.
+
+    Does NOT raise on final failure — leaves db_pool as None so the app
+    keeps running and individual endpoints return 503 as needed.
+    """
     global db_pool
-    try:
-        database_url = os.getenv("DATABASE_URL")
-        if not database_url:
-            database_url = "postgresql://postgres:postgres@localhost:5433/geoplatform"
-        
-        db_pool = pool.SimpleConnectionPool(
-            minconn=2,
-            maxconn=10,
-            dsn=database_url,
-            connect_timeout=5
-        )
-        logger.info("Connection pool initialized successfully")
-    except Exception as e:
-        logger.error(f"Failed to initialize connection pool: {e}")
-        raise
+    dsn = os.getenv("DATABASE_URL") or "postgresql://postgres:postgres@localhost:5433/geoplatform"
+    retries = int(os.getenv("DB_CONN_RETRIES", "3"))
+    backoff = float(os.getenv("DB_CONN_RETRY_BACKOFF", "2.0"))
+    minconn = int(os.getenv("DB_POOL_MIN", "1"))
+    maxconn = int(os.getenv("DB_POOL_MAX", "10"))
+    connect_timeout = int(os.getenv("DB_CONNECT_TIMEOUT", "5"))
+
+    for attempt in range(1, retries + 1):
+        try:
+            db_pool = pool.SimpleConnectionPool(
+                minconn=minconn,
+                maxconn=maxconn,
+                dsn=dsn,
+                connect_timeout=connect_timeout,
+            )
+            logger.info("Connection pool initialized successfully")
+            return
+        except Exception as e:
+            db_pool = None
+            logger.warning(f"init_pool attempt {attempt}/{retries} failed: {e}")
+            if attempt == retries:
+                logger.error(
+                    "All init_pool attempts exhausted — "
+                    "app will keep running; DB endpoints will return 503"
+                )
+                return
+            sleep = backoff * (2 ** (attempt - 1)) * (0.5 + random.random() * 0.5)
+            logger.info(f"Retrying in {sleep:.1f}s...")
+            time.sleep(sleep)
+
 
 def get_connection():
-    """Get connection from pool"""
+    """Get connection from pool.
+
+    If db_pool is None (startup failed), tries to reinitialize once.
+    Raises HTTP 503 if the DB is still unavailable.
+    """
+    global db_pool
+    if db_pool is None:
+        logger.info("db_pool is None — attempting lazy reinitialization")
+        init_pool()
+
+    if db_pool is None:
+        raise HTTPException(status_code=503, detail="Database unavailable")
+
     try:
-        if db_pool is None:
-            init_pool()
         return db_pool.getconn()
     except Exception as e:
-        logger.error(f"Connection pool error: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Database connection error"
-        )
+        logger.warning(f"getconn error: {e} — attempting one pool reinit")
+        db_pool = None
+        init_pool()
+        if db_pool is None:
+            raise HTTPException(status_code=503, detail="Database unavailable")
+        try:
+            return db_pool.getconn()
+        except Exception as e2:
+            logger.error(f"getconn after reinit failed: {e2}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
+
 
 @app.on_event("startup")
 def startup():
-    """Initialize pool on startup"""
-    try:
-        init_pool()
-    except Exception as e:
-        logger.error(f"Startup error: {e}")
+    """Initialize pool on startup — failures are non-fatal."""
+    init_pool()
 
 @app.on_event("shutdown")
 def shutdown():
@@ -139,6 +173,35 @@ def root():
 def health():
     """Server health check"""
     return {"status": "ok", "version": "2.0"}
+
+
+# =============================
+# READINESS CHECK
+# =============================
+
+@app.get("/ready")
+def ready():
+    """Readiness probe — confirms DB is reachable.
+
+    Returns 200 if a lightweight SELECT 1 succeeds.
+    Returns 503 if the DB is unreachable.
+    Use this as the readiness probe in k8s / platform health checks.
+    """
+    conn = None
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.close()
+        return {"status": "ready"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"Readiness check failed: {e}")
+        raise HTTPException(status_code=503, detail="Database not ready")
+    finally:
+        if conn and db_pool:
+            db_pool.putconn(conn)
 
 # =============================
 # DRILLHOLES LIST (with pagination & filtering)
