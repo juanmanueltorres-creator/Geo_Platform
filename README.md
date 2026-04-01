@@ -1,189 +1,134 @@
-# 🌍 GEO-PLATFORM v3.0
+@"
+# Geo Platform
 
-**En 5 segundos:** Una plataforma interactiva donde geólogos exploran datos de perforaciones (drillholes), muestras y ensayos de oro en tiempo real. 
+![CI](https://github.com/juanmanueltorres-creator/Geo_Platform/actions/workflows/ci.yml/badge.svg)
 
-🎯 **Lo que puedes hacer:**
-- 📍 Ver perforaciones en el mapa
-- 💰 Revisar resultados de oro por pozo  
-- 📊 Analizar patrones de minerales
-- 📈 Gráficos de profundidad vs. oro
+Full-stack geospatial platform for mineral exploration workflows.
 
-🚀 **[Explorar ahora](https://geo-platform-axhipqo2p-juanmanueltorres-creators-projects.vercel.app)** | 🔧 **[API Docs](https://geo-plataform.onrender.com)**
+This project transforms geological and drilling data into interactive tools for visualization, analysis, and decision-making.
 
 ---
 
-**Status:** ✅ **Fully Live in Production** | Last Update: March 2026 | **v3.0 Frontend Deployed ✨**
+## 🚀 Overview
 
-Production-ready mineral exploration database with modern React frontend and interactive geospatial API platform.
+Geo Platform is designed to simulate real-world exploration workflows:
 
-## Stack
+- Drillhole data visualization
+- Spatial analysis with PostGIS
+- API-driven architecture for scalability
+- Interactive frontend for geoscientists
 
-**Backend:**
-- **API:** FastAPI 0.104.1 (Python 3.11.9)
-- **Server:** Render.com (Cloud Deployment)
-- **Database:** PostgreSQL 15+ with PostGIS 3.4+ (Supabase)
-- **Connection Pooling:** psycopg2 SimpleConnectionPool (2-10 connections)
+---
 
-**Frontend:**
-- **Framework:** React 18 + TypeScript + Vite (v3.0)
-- **UI Library:** Shadcn/ui with Tailwind CSS
-- **Map:** React-Leaflet 4.2 + OpenStreetMap
-- **Charts:** Recharts
-- **Theming:** Dark Mode support
+## 🧱 Tech Stack
 
-**Architecture Goals:**
-- ✅ Exploration Data Platform
-- ✅ Geospatial Analytics API
-- ✅ Interactive Web Portal
-- ✅ Mobile-friendly exploration dashboard
+**Backend**
+- FastAPI
+- PostgreSQL / PostGIS (Supabase)
+- Python
 
-## Geological Model
+**Frontend**
+- React
+- Vite
+- Leaflet
 
-Synthetic Andean Au-dominant transitional system with real exploration data.
+**DevOps**
+- GitHub Actions (CI)
+- Render (backend deployment)
+- Vercel (frontend deployment)
 
-**Dataset:** 4 Drillholes | ~1,200 Samples | 682 Assay Results | Lithology, Alteration, Mineralization Logs
+---
 
-## Production Deployment (v3.0)
+## 🏗️ Architecture
 
-**Backend API:** `https://geo-plataform.onrender.com`  
-**Frontend Web:** `https://geo-platform-axhipqo2p-juanmanueltorres-creators-projects.vercel.app`
+Frontend (React + Leaflet)
+        ↓
+FastAPI Backend
+        ↓
+PostgreSQL + PostGIS (Supabase)
 
-### Core Endpoints
+- Backend exposes REST endpoints
+- Frontend consumes API and renders spatial data
+- Database handles geospatial queries
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/health` | GET | API health check |
-| `/drillholes` | GET | List all drillholes with pagination |
-| `/drillholes/{id}/summary` | GET | Drillhole summary (total_samples, avg_au, max_au) |
-| `/drillholes/{id}/assays` | GET | Assay results for drillhole (filterable by element, depth) |
-| `/drillholes/{id}/lithology` | GET | Lithology intervals for drillhole |
-| `/geospatial/drillhole-locations` | GET | GeoJSON features with drillhole coordinates |
-| `/geospatial/domains` | GET | Domain geometries for geospatial visualization |
-| `/geospatial/drillholes-geojson` | GET | All drillholes as GeoJSON FeatureCollection |
+---
 
-**Example Response** (Assays):
-```json
-{
-  "drillhole_id": "26411fec-cb87-4439-b539-ac436a6fec7e",
-  "assay_count": 682,
-  "data": [
-    {
-      "sample_id": "1eebb13e-a7e0-40b2-81fc-1d0d40972f15",
-      "from_depth": 0.0,
-      "to_depth": 2.0,
-      "element": "Au",
-      "value": 0.180216613744019,
-      "unit": "ppb",
-      "below_detection": false
-    }
-  ]
-}
-```
+## ⚙️ Quickstart
 
-### Query Parameters
+### 1. Clone repo
 
-- **Pagination:** `page=1&limit=50`
-- **Assay Filtering:** `element=Au&from_depth=0&to_depth=100`
-- **CRS:** All spatial data in EPSG:4326
+git clone https://github.com/juanmanueltorres-creator/Geo_Platform.git
+cd Geo_Platform
 
-## Web Interface (v3.0) ✨
+---
 
-**Interactive Explorer:** React 18 + TypeScript + Vite + Shadcn/ui with Dark Mode
+### 2. Backend setup
 
-**Live:** https://geo-platform-axhipqo2p-juanmanueltorres-creators-projects.vercel.app
+python -m venv .venv
+.\.venv\Scripts\activate
 
-### Features
-- 🗺️ Real-time drillhole locations (React-Leaflet 4.2)
-- 📍 Click popups with interactive data + coordinates
-- 📊 Drillhole summary stats using NEW `/drillholes/{id}/summary` endpoint
-- 📈 Interactive Assay charts (Recharts) with Au vs depth
-- 🌙 Dark/Light mode toggle with persistence
-- ✨ **NEW** Hero section with instant project context (5-second overview)
-- 🔍 **NEW** Search & Filter panel for drillhole discovery
-- 🏆 **NEW** Top Drillholes ranking by Au grade (premium visualization)
-- ⚡ Type-safe API integration (TypeScript + Axios)
-- 📱 Responsive design (Tailwind CSS)
-- 🎨 Professional UI with Shadcn/ui components
-- ⚡ Ultra-fast builds (Vite 5.4.21)
+pip install -r api/requirements.txt
 
-### 🎯 New Components (v3.0 Update)
+Run server:
 
-**HeroSection** — Instant project context with:
-- Clear 5-second value proposition
-- Visual feature highlights with icons
-- Dataset overview metrics
+uvicorn api.main:app --reload
 
-**SearchFilter** — Smart discovery panel featuring:
-- Drillhole name search with real-time filtering
-- Au grade range slider (dual handle)
-- Min/Max ppb visual feedback
-- Reset filters button
+---
 
-**TopDrillholes** — Premium ranking visualization:
-- Ranked list of top 4 drillholes by max Au
-- Visual progress bars normalized to highest value
-- Sample counts & average Au grades per hole
-- Click-to-select integration with map & charts
+### 3. Frontend setup
 
-### Local Development
-
-```bash
 cd web
-npm install  # 304 packages
-npm run dev  # Opens http://localhost:3000
-```
+npm install
+npm run dev
 
-### Production Build
+---
 
-```bash
-npm run build  # Creates optimized dist/
-# Auto-deployed to Vercel on git push
-```
+## 🧪 Running tests
 
-### Vertical system architecture
+python -m pytest -v
 
-```text
-Epithermal Au–Ag zone
-        │
-        ▼
-  Phyllic alteration
-        │
-        ▼
-  Porphyry Cu–Au core
-```
+Includes smoke tests for:
 
-### Typical geochemical indicators
+- /health
+- /
+- /debug-db (protected endpoint)
 
-- **Epithermal:** Au, Ag, As, Sb, Pb, Zn
-- **Porphyry:** Cu, Mo, Fe, S
+---
 
-## Database Design (PostgreSQL + PostGIS on Supabase)
+## 🔐 Security
 
-- **UUID Primary Keys:** All tables use UUID for distributed system context
-- **Interval-based Modeling:** `numrange` type for geological intervals (from_depth, to_depth)
-- **PostGIS Geometry:** 4326 (WGS84) spatial reference for all coordinates
-- **Normalized Schema:** Separate tables for samples, assays, lithology, alteration, mineralization
-- **Foreign Key Relationships:** Element lookups, domain assignments, method/laboratory tracking
-- **EXCLUDE Constraints:** Prevents overlapping intervals in geological sequences
-- **Standardized Views:** 13+ analytical views for exploration analytics
+- /debug-db is protected with ADMIN_TOKEN
+- Token validation uses constant-time comparison
+- No sensitive configuration is exposed in responses
 
-### Real Schema (Supabase)
+---
 
-**Key Tables:**
-```
-- drillholes (id UUID, hole_id text, status, total_depth)
-- collars (drillhole_id UUID, geom PostGIS, location)
-- samples (id UUID, drillhole_id UUID, interval numrange, sample_type)
-- assay_results (sample_id UUID, element_id UUID, value numeric, unit text, is_below_detection)
-- elements (id UUID, symbol text: 'Au', 'Cu', 'As', etc.)
-- lithology_intervals (sample_id UUID, lithology_code, lithology_description)
-- alteration_events (sample_id UUID, alteration_type, intensity)
-- mineralization_intervals (sample_id UUID, mineral, percentage)
-- domain_assignments (sample_id UUID, domain_id UUID)
-- geological_domains (id UUID, name text, domain_type text)
-```
+## ⚙️ CI Pipeline
 
-**Sample Count:** ~1,200 samples across 4 drillholes
+GitHub Actions workflow:
+
+- Backend: installs dependencies and runs pytest
+- Frontend: installs dependencies and builds project
+
+Ensures changes do not break the system.
+
+---
+
+## 📍 Roadmap
+
+- [ ] Stable database connection handling (Supabase)
+- [ ] Drillhole dataset ingestion
+- [ ] Advanced geospatial queries (PostGIS)
+- [ ] Frontend data layers and filtering
+- [ ] Authentication & roles
+- [ ] Deployment hardening
+
+---
+
+## 📌 Status
+
+Active development. Focused on building a production-ready geospatial system aligned with real exploration workflows.
+"@ | Set-Content -Encoding UTF8 README.md
 
 ## Core Data Model
 
@@ -289,135 +234,6 @@ docs/
 └─────────────────────────────────────┘
 ```
 
-### Local Development
-
-1. **Database:** PostgreSQL 15+ with PostGIS 3.4+
-2. **Environment:** `.env` with `DATABASE_URL`
-3. **Dependencies:** `pip install -r api/requirements.txt`
-4. **Run API:** `uvicorn api.main:app --reload --port 8000`
-5. **Access Map:** Open `web/map.html` locally (detects localhost API)
-
-### Initial Data Load
-
-1. Run schema initialization scripts (`database/*.sql`)
-2. Load reference data (`seeds/01_reference_data.sql`)
-3. Load company/project structure (`seeds/02-03_*.sql`)
-4. Populate drillholes and samples (`seeds/04-11_*.sql`)
-5. Validate with views (`seeds/12-13_*.sql`)
-
-## Analytical Views (13 Views Available)
-
-### Sample-Level
-
-**`v_sample_geology`**
-- Integrated geological dataset
-- Combines: samples + lithology + alteration + mineralization + domains + assays
-- Used by: Frontend drill-down, analytics, ML pipeline
-
-### Drillhole-Level
-
-**`v_drillhole_summary`**
-- Drillhole statistics
-- Fields: `total_samples`, `average_Au`, `max_Au`, `total_depth`, `hole_id`
-
-**`v_drillhole_locations`** ⭐
-- Frontend source for map visualization
-- Fields: `drillhole_id`, `hole_id`, `geom` (PostGIS), `max_depth`
-- Returns: GeoJSON-serializable coordinates
-
-### Domain-Level
-
-**`v_domain_statistics`**
-- Domain-based grade statistics
-- Fields: `domain_name`, `mean_Au`, `median_Cu`, `sample_count`
-
-### Composititing & ML
-
-**`v_downhole_composites`**
-- 5-meter weighted composites from samples
-- View: `v_downhole_composites`
-
-**`v_high_grade_intersections`**
-- Au ≥ 1 g/t && Thickness ≥ 2 m
-- Used for exploration targeting
-
-**`v_ml_dataset`** 🤖
-- Features: `mid_depth`, `lithology`, `alteration`, `mineralization`, `domain`, `au_grade`
-- Designed for: Python + GeoPandas + scikit-learn
-
-## Spatial Data & Coordinates
-
-- **Reference System:** EPSG:4326 (WGS84)
-- **Storage:** PostGIS geometry in `collars.geom` column
-- **API Format:** GeoJSON with [longitude, latitude] ordering
-- **Map Rendering:** Leaflet.js L.geoJSON() with automatic feature styling
-
-## Current Dataset
-
-- **4 Drillholes:** DH-1, DH-2, DH-3, DH-4
-- **~1,200 Samples:** 2m intervals across 4 drillholes
-- **682+ Assay Results:** Au, Cu with real geochemical patterns
-- **Lithology:** Synthetic Andean mineralogy (granodiorite, porphyry, epithermal)
-- **Alteration:** Phyllic, propylitic, advanced argillic zonation
-- **Mineralization:** Au and Cu intervals with grade relationships
-- **Domains:** Epithermal (Au-Ag), Phyllic, Porphyry (Cu-Au) interpreted
-
-## Known Limitations
-
-- Synthetic data for development/demo purposes
-- Single project context (extensible to multi-project)
-- No user authentication layer (JWT ready architecture)
-- CORS permissive (needs domain restriction for production)
-- Map tile requests via OpenStreetMap (requires internet access)
-
-## Production Roadmap (v2.1+)
-
-- [ ] JWT authentication & role-based access
-- [ ] Rate limiting on API endpoints
-- [ ] Domain-specific color-coded map visualization
-- [ ] 3D view integration (Three.js)
-- [ ] Cross-section generator (N-S, E-W views)
-- [ ] Lithology/alteration drill-down UI
-- [ ] Real-time data sync via WebSockets
-- [ ] Mobile-optimized interface
-- [ ] Admin dashboard for system management
-
-## Industry Comparisons
-
-This architecture follows workflows similar to industry-standard platforms:
-
-| Platform | Key Feature | Equivalent in GeoPlatform |
-|----------|-------------|---------------------------|
-| **Leapfrog Geo** | 3D geological modeling | v_sample_geology + domains |
-| **Micromine** | Block model generation | Compositing engine |
-| **Datamine** | Grade estimation | v_ml_dataset |
-| **Seequent Central** | Cloud-based collaboration | Supabase + Render |
-
-## Contributing
-
-The project is structured for rapid feature addition:
-
-1. **Add API Endpoint:** Edit `api/main.py`, add route + SQL query
-2. **Create Query:** Add `.sql` file to `queries/`, reference in views
-3. **Frontend Integration:** Update `web/map.html` Leaflet event handlers
-4. **Deploy:** `git push origin main` → Render auto-builds
-
-## License & Attribution
-
-Synthetic exploration database built for educational and demonstration purposes.
-
----
-
-**Last Updated:** March 2026 | **Backend:** ✅ Live on Render | **Frontend:** ✅ Live on Vercel | **Version:** 3.0
-- acQuire GIM Suite
-
-This system is implemented using open-source technologies.
-
-## Future Development
-
-- **API layer:** FastAPI
-- **Web mapping:** Leaflet, Mapbox
-- **Data science:** Python, GeoPandas, scikit-learn
 
 ## Pipeline Summary
 
