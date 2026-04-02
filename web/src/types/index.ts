@@ -18,8 +18,8 @@ export interface DrillholeSummary {
 
 export interface Assay {
   sample_id: string
-  from_depth: number
-  to_depth: number
+  from: number
+  to: number
   interval_length: number
   element: string
   value: number
