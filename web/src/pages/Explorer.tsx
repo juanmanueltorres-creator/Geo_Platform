@@ -8,12 +8,13 @@ import { HeroSection } from '@/components/HeroSection'
 import { SearchFilter } from '@/components/SearchFilter'
 import { TopDrillholes } from '@/components/TopDrillholes'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import type { Drillhole } from '@/types'
+import type { Drillhole, PeakZone } from '@/types'
 
 export function Explorer() {
   const [selectedDrillhole, setSelectedDrillhole] = useState<Drillhole | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [allDrillholes, setAllDrillholes] = useState<Drillhole[]>([])
+  const [peakZone, setPeakZone] = useState<PeakZone | null>(null)
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-950 dark:text-slate-50">
@@ -55,6 +56,7 @@ export function Explorer() {
                 <AssayChart 
                   drillholeId={selectedDrillhole.drillhole_id}
                   holeName={selectedDrillhole.drillhole}
+                  onPeakComputed={setPeakZone}
                 />
               </div>
             )}
@@ -82,6 +84,7 @@ export function Explorer() {
                 drillholeId={selectedDrillhole.drillhole_id}
                 holeName={selectedDrillhole.drillhole}
                 maxDepth={selectedDrillhole.max_depth}
+                peakZone={peakZone}
               />
             ) : (
               <Card>

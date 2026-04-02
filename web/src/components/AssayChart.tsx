@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
 import {
   ComposedChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ReferenceLine, ResponsiveContainer,
+  Tooltip, Legend, ReferenceLine, ReferenceArea, ResponsiveContainer,
 } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { api } from '@/lib/api'
-import type { Assay } from '@/types'
+import type { Assay, PeakZone } from '@/types'
 
 interface AssayChartProps {
   drillholeId: string
   holeName: string
+  onPeakComputed?: (peak: PeakZone | null) => void
 }
 
 interface DepthRow {
@@ -42,8 +43,19 @@ function pivotByDepth(rows: Assay[]): DepthRow[] {
   return Array.from(map.values()).sort((a, b) => a.midDepth - b.midDepth)
 }
 
-export function AssayChart({ drillholeId, holeName }: AssayChartProps) {
+/** Find the interval with the highest Au value */
+function findPeakZone(rows: DepthRow[]): PeakZone | null {
+  let best: DepthRow | null = null
+  for (const r of rows) {
+    if (r.au != null && (best === null || r.au > (best.au ?? 0))) best = r
+  }
+  if (!best || best.au == null) return null
+  return { from: best.fromDepth, to: best.toDepth, value: best.au }
+}
+
+export function AssayChart({ drillholeId, holeName, onPeakComputed }: AssayChartProps) {
   const [data, setData] = useState<DepthRow[]>([])
+  const [peak, setPeak] = useState<PeakZone | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -52,10 +64,15 @@ export function AssayChart({ drillholeId, holeName }: AssayChartProps) {
       try {
         setLoading(true)
         const response = await api.getAssays(drillholeId)
-        setData(pivotByDepth(response.data))
+        const pivoted = pivotByDepth(response.data)
+        const peakZone = findPeakZone(pivoted)
+        setData(pivoted)
+        setPeak(peakZone)
+        onPeakComputed?.(peakZone)
         setError(null)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error loading assays')
+        onPeakComputed?.(null)
         console.error('Error fetching assays:', err)
       } finally {
         setLoading(false)
@@ -206,6 +223,25 @@ export function AssayChart({ drillholeId, holeName }: AssayChartProps) {
               strokeOpacity={0.4}
               label={{ value: '0.1', position: 'top', fill: '#f59e0b', fontSize: 9 }}
             />
+
+            {/* Peak Au zone — highlighted band */}
+            {peak && (
+              <ReferenceArea
+                y1={peak.from}
+                y2={peak.to}
+                fill="#f59e0b"
+                fillOpacity={0.12}
+                stroke="#f59e0b"
+                strokeOpacity={0.3}
+                strokeDasharray="4 2"
+                label={{
+                  value: `▸ Peak ${peak.value.toFixed(2)} ppm`,
+                  position: 'right',
+                  fill: '#fbbf24',
+                  fontSize: 10,
+                }}
+              />
+            )}
 
             {/* Au line */}
             <Line

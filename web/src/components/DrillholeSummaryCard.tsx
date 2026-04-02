@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { Activity, FlaskConical, Layers, Mountain } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { api } from '@/lib/api'
-import type { DrillholeSummary, GeologySummary } from '@/types'
+import type { DrillholeSummary, GeologySummary, PeakZone } from '@/types'
 
 interface DrillholeSummaryProps {
   drillholeId: string
   holeName: string
   maxDepth?: number
+  peakZone?: PeakZone | null
 }
 
 type GradeClass = 'HIGH GRADE' | 'ANOMALOUS' | 'BACKGROUND'
@@ -44,7 +45,7 @@ const LITH_COLORS: Record<string, string> = {
   DIO: 'bg-blue-500',
 }
 
-export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth }: DrillholeSummaryProps) {
+export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth, peakZone }: DrillholeSummaryProps) {
   const [summary, setSummary] = useState<DrillholeSummary | null>(null)
   const [geology, setGeology] = useState<GeologySummary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -131,6 +132,11 @@ export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth }: Drillh
                 {summary.max_au != null ? summary.max_au.toFixed(3) : 'N/A'}
                 <span className="text-xs font-normal text-slate-500 ml-1">ppm</span>
               </p>
+              {peakZone && (
+                <p className="text-[10px] text-amber-500/70 mt-0.5">
+                  Peak zone: {peakZone.from.toFixed(0)}–{peakZone.to.toFixed(0)} m
+                </p>
+              )}
             </div>
             <div className="text-right">
               <p className="text-[10px] text-slate-400 uppercase tracking-wider">Avg Au</p>
@@ -170,12 +176,24 @@ export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth }: Drillh
         <div className="bg-slate-800/30 rounded-lg p-2.5 border border-slate-700/30">
           <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Signal Insight</p>
           <p className="text-xs text-slate-300 leading-relaxed">
-            {grade === 'HIGH GRADE'
-              ? `Peak ${summary.max_au!.toFixed(2)} ppm Au with avg ${summary.avg_au!.toFixed(3)} ppm across ${summary.total_samples} samples — strong sustained signal.`
-              : grade === 'ANOMALOUS'
-              ? `Peak ${summary.max_au?.toFixed(2) ?? '?'} ppm Au — anomalous signal worth follow-up, ${summary.total_samples} samples logged.`
-              : `Background gold values across ${summary.total_samples} samples — low exploration priority.`
-            }
+            {(() => {
+              const depthLabel = peakZone
+                ? peakZone.from < (maxDepth ?? 999) * 0.25
+                  ? 'shallow'
+                  : peakZone.from > (maxDepth ?? 0) * 0.65
+                  ? 'deep'
+                  : 'mid-hole'
+                : null
+              const zoneStr = peakZone ? `${peakZone.from.toFixed(0)}–${peakZone.to.toFixed(0)} m` : null
+
+              if (grade === 'HIGH GRADE') {
+                return `Peak ${summary.max_au!.toFixed(2)} ppm Au at ${zoneStr ?? '?'} (${depthLabel ?? 'unknown depth'}) with avg ${summary.avg_au!.toFixed(3)} ppm across ${summary.total_samples} samples — ${depthLabel === 'shallow' ? 'near-surface high-grade target' : depthLabel === 'deep' ? 'deep high-grade intercept, drill extensions recommended' : 'mid-hole high-grade zone with follow-up potential'}.`
+              }
+              if (grade === 'ANOMALOUS') {
+                return `Peak ${summary.max_au?.toFixed(2) ?? '?'} ppm Au${zoneStr ? ` at ${zoneStr}` : ''} — ${depthLabel === 'shallow' ? 'shallow anomaly, trenching viable' : depthLabel === 'deep' ? 'deep anomalous signal, step-out drilling warranted' : 'anomalous signal worth follow-up'}, ${summary.total_samples} samples logged.`
+              }
+              return `Background gold values across ${summary.total_samples} samples${zoneStr ? `, best interval at ${zoneStr}` : ''} — low exploration priority.`
+            })()}
           </p>
         </div>
 

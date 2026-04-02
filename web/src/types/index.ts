@@ -9,6 +9,12 @@ export interface Drillhole {
   }
 }
 
+export interface PeakZone {
+  from: number
+  to: number
+  value: number
+}
+
 export interface DrillholeSummary {
   drillhole_id: string
   total_samples: number
