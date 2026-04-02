@@ -293,6 +293,29 @@ def list_drillholes(
             db_pool.putconn(conn)
 
 # =============================
+# HELPERS
+# =============================
+
+def _resolve_drillhole_uuid(cur, drillhole_id: str) -> str:
+    """Resolve a path param that may be a UUID or a human-readable hole_id.
+
+    Returns the internal UUID string, or raises HTTP 404 if not found.
+    """
+    import uuid as _uuid
+    try:
+        _uuid.UUID(drillhole_id)
+        return drillhole_id  # already a valid UUID
+    except ValueError:
+        pass
+
+    cur.execute("SELECT id FROM drillholes WHERE hole_id = %s", [drillhole_id])
+    row = cur.fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Drillhole '{drillhole_id}' not found")
+    return str(row["id"])
+
+
+# =============================
 # DRILLHOLE ASSAYS (multi-element)
 # =============================
 
@@ -319,6 +342,8 @@ def get_assays(
         conn = get_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+        drillhole_uuid = _resolve_drillhole_uuid(cur, drillhole_id)
+
         base_query = """
             SELECT 
                 s.id AS sample_id,
@@ -334,7 +359,7 @@ def get_assays(
             WHERE s.drillhole_id = %s
         """
         
-        params = [drillhole_id]
+        params = [drillhole_uuid]
         
         if element:
             base_query += " AND UPPER(COALESCE(e.symbol, '')) = UPPER(%s)"
@@ -422,6 +447,8 @@ def get_drillhole_summary(drillhole_id: str):
         conn = get_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+        drillhole_uuid = _resolve_drillhole_uuid(cur, drillhole_id)
+
         # Query to get summary stats on Au
         summary_query = """
             SELECT 
@@ -434,7 +461,7 @@ def get_drillhole_summary(drillhole_id: str):
             WHERE s.drillhole_id = %s
         """
         
-        cur.execute(summary_query, [drillhole_id])
+        cur.execute(summary_query, [drillhole_uuid])
         result = cur.fetchone()
 
         if not result:
