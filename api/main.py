@@ -241,10 +241,8 @@ def list_drillholes(
         base_query = """
             SELECT 
                 hole_id,
-                drillhole_name,
                 project_id,
-                max_depth,
-                collar_geom::TEXT AS collar_wkt
+                total_depth
             FROM drillholes
             WHERE 1=1
         """
@@ -256,7 +254,7 @@ def list_drillholes(
             params.append(project_id)
         
         # Validate sort field
-        valid_sorts = {"hole_id", "drillhole_name", "max_depth"}
+        valid_sorts = {"hole_id", "total_depth"}
         sort_field = sort if sort in valid_sorts else "hole_id"
         base_query += f" ORDER BY {sort_field}"
         
@@ -276,9 +274,9 @@ def list_drillholes(
             "data": [
                 {
                     "hole_id": r["hole_id"],
-                    "name": r["drillhole_name"],
+                    "name": r["hole_id"],
                     "project_id": r["project_id"],
-                    "max_depth": float(r["max_depth"])
+                    "max_depth": float(r["total_depth"]) if r["total_depth"] is not None else None
                 }
                 for r in rows
             ]
@@ -726,13 +724,13 @@ def drillholes_geojson():
 
         cur.execute("""
             SELECT
-                hole_id,
-                drillhole_name,
-                project_id,
-                max_depth,
-                ST_AsGeoJSON(collar_geom) AS geom
-            FROM drillholes
-            ORDER BY drillhole_name
+                dh.hole_id,
+                dh.project_id,
+                dh.total_depth,
+                ST_AsGeoJSON(c.geom) AS geom
+            FROM drillholes dh
+            LEFT JOIN collars c ON c.drillhole_id = dh.id
+            ORDER BY dh.hole_id
         """)
 
         rows = cur.fetchall()
@@ -740,15 +738,16 @@ def drillholes_geojson():
         features = []
 
         for r in rows:
+            geom = json.loads(r["geom"]) if r["geom"] else None
             features.append({
                 "type": "Feature",
                 "properties": {
                     "hole_id": r["hole_id"],
-                    "name": r["drillhole_name"],
+                    "name": r["hole_id"],
                     "project_id": str(r["project_id"]),
-                    "max_depth": float(r["max_depth"])
+                    "max_depth": float(r["total_depth"]) if r["total_depth"] is not None else None
                 },
-                "geometry": json.loads(r["geom"])
+                "geometry": geom
             })
 
         logger.info(f"Generated extended GeoJSON: {len(features)} drillholes")
