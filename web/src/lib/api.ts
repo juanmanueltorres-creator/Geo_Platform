@@ -9,9 +9,10 @@ const apiClient = axios.create({
 })
 
 export const api = {
-  // Get all drillhole locations
+  // Get all drillhole locations (extended GeoJSON with depth + geometry)
   getDrillholeLocations: async (): Promise<GeoJSONFeatureCollection> => {
-    const response = await apiClient.get('/geospatial/drillhole-locations')
+    const response = await apiClient.get('/geospatial/drillholes-geojson')
+    console.log('[api] drillholes-geojson response:', response.data)
     return response.data
   },
 

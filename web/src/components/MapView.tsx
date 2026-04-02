@@ -20,10 +20,10 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded }: MapViewProps)
         setLoading(true)
         const data = await api.getDrillholeLocations()
         const holes = data.features.map(feature => ({
-          drillhole_id: feature.properties.drillhole_id,
+          drillhole_id: feature.properties.hole_id,
           hole_id: feature.properties.hole_id,
-          drillhole: feature.properties.drillhole,
-          max_depth: feature.properties.max_depth,
+          drillhole: feature.properties.name,
+          max_depth: feature.properties.max_depth ?? 0,
           geometry: feature.geometry
         }))
         setDrillholes(holes)
@@ -108,7 +108,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded }: MapViewProps)
                     </tr>
                     <tr>
                       <td className="font-semibold pr-2">Max Depth:</td>
-                      <td>{hole.max_depth.toFixed(1)} m</td>
+                      <td>{hole.max_depth != null ? hole.max_depth.toFixed(1) : 'N/A'} m</td>
                     </tr>
                     <tr>
                       <td className="font-semibold pr-2">Coord:</td>
