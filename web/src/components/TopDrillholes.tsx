@@ -7,6 +7,7 @@ import type { DrillholeSummary, Drillhole } from '@/types'
 interface TopDrillholesProps {
   drillholes: Drillhole[]
   onSelectDrillhole?: (drillhole: Drillhole) => void
+  selectedDrillholeId?: string | null
 }
 
 interface DrillholesWithSummary {
@@ -14,7 +15,7 @@ interface DrillholesWithSummary {
   summary: DrillholeSummary
 }
 
-export function TopDrillholes({ drillholes, onSelectDrillhole }: TopDrillholesProps) {
+export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillholeId }: TopDrillholesProps) {
   const [ranked, setRanked] = useState<DrillholesWithSummary[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -100,7 +101,11 @@ export function TopDrillholes({ drillholes, onSelectDrillhole }: TopDrillholesPr
           <div
             key={item.drillhole.drillhole_id}
             onClick={() => onSelectDrillhole?.(item.drillhole)}
-            className="space-y-2 p-3 bg-white dark:bg-slate-700/50 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+            className={`space-y-2 p-3 rounded-lg cursor-pointer transition-all ${
+              item.drillhole.drillhole_id === selectedDrillholeId
+                ? 'bg-amber-100 dark:bg-amber-900/40 ring-2 ring-amber-500 shadow-lg'
+                : 'bg-white dark:bg-slate-700/50 hover:shadow-md'
+            }`}
           >
             {/* Rank + Name */}
             <div className="flex items-center justify-between">

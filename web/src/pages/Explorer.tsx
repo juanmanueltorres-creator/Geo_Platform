@@ -46,6 +46,7 @@ export function Explorer() {
               <MapView 
                 onDrillholeSelect={setSelectedDrillhole}
                 onDrillholesLoaded={setAllDrillholes}
+                selectedDrillholeId={selectedDrillhole?.drillhole_id ?? null}
               />
             </Card>
             
@@ -75,6 +76,7 @@ export function Explorer() {
             <TopDrillholes
               drillholes={allDrillholes}
               onSelectDrillhole={setSelectedDrillhole}
+              selectedDrillholeId={selectedDrillhole?.drillhole_id ?? null}
             />
 
             {/* Selected Drillhole Summary */}
