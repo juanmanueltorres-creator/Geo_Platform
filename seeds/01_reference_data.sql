@@ -4,7 +4,7 @@
 -- =====================================================
 
 INSERT INTO elements (symbol, name, default_unit) VALUES
-('Au', 'Gold', 'ppb'),
+('Au', 'Gold', 'ppm'),
 ('Ag', 'Silver', 'ppm'),
 ('Cu', 'Copper', '%'),
 ('Mo', 'Molybdenum', 'ppm'),
@@ -19,7 +19,7 @@ INSERT INTO laboratories (name, accreditation) VALUES
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO assay_methods (code, description, detection_limit, unit) VALUES
-('FA_AAS', 'Fire Assay AAS finish', 1, 'ppb'),
+('FA_AAS', 'Fire Assay AAS finish', 0.001, 'ppm'),
 ('ICP_MS', 'ICP-MS multi-element', 0.1, 'ppm'),
 ('XRF', 'X-Ray Fluorescence', 0.01, '%')
 ON CONFLICT (code) DO NOTHING;

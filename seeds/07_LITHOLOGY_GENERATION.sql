@@ -1,12 +1,15 @@
 -- =====================================================
 -- 07_LITHOLOGY_GENERATION.sql
+-- Depth-based lithology zonation for Andean volcanic-
+-- intrusive sequence (TUF → AND → BRX → DIO).
 -- =====================================================
 
 DO $$
 DECLARE
-    r RECORD;
+    r       RECORD;
     v_start NUMERIC;
-    v_end NUMERIC;
+    v_end   NUMERIC;
+    v_mid   NUMERIC;
     v_lith_id UUID;
 BEGIN
 
@@ -16,31 +19,23 @@ FOR r IN SELECT id, total_depth FROM drillholes LOOP
 
     WHILE v_start < r.total_depth LOOP
 
-        v_end := v_start + 50;
+        v_end := LEAST(v_start + 50, r.total_depth);
+        v_mid := (v_start + v_end) / 2;
 
-        IF v_end > r.total_depth THEN
-            v_end := r.total_depth;
-        END IF;
-
-        -- Determinar litología según profundidad media
-        IF (v_start + v_end)/2 < 100 THEN
+        IF v_mid < 80 THEN
             SELECT id INTO v_lith_id FROM lithologies WHERE code = 'TUF';
-        ELSIF (v_start + v_end)/2 < 250 THEN
+        ELSIF v_mid < 200 THEN
             SELECT id INTO v_lith_id FROM lithologies WHERE code = 'AND';
-        ELSIF (v_start + v_end)/2 < 400 THEN
+        ELSIF v_mid < 350 THEN
             SELECT id INTO v_lith_id FROM lithologies WHERE code = 'BRX';
         ELSE
             SELECT id INTO v_lith_id FROM lithologies WHERE code = 'DIO';
         END IF;
 
         INSERT INTO lithology_intervals
-        (drillhole_id, interval, lithology_id)
+            (drillhole_id, interval, lithology_id)
         VALUES
-        (
-            r.id,
-            numrange(v_start, v_end, '[)'),
-            v_lith_id
-        );
+            (r.id, numrange(v_start, v_end, '[)'), v_lith_id);
 
         v_start := v_end;
 

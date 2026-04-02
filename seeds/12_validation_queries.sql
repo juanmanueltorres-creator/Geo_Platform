@@ -32,7 +32,10 @@ FROM samples;
 
 SELECT
     e.symbol,
-    COUNT(*) AS assays
+    COUNT(*) AS assays,
+    ROUND(MIN(ar.value)::numeric, 4) AS min_value,
+    ROUND(MAX(ar.value)::numeric, 4) AS max_value,
+    ROUND(AVG(ar.value)::numeric, 4) AS avg_value
 FROM assay_results ar
 JOIN elements e
     ON e.id = ar.element_id
@@ -99,7 +102,7 @@ ORDER BY intervals DESC;
 -- 8. Gold grade by domain
 --------------------------------------------------------
 
-SELECT 
+SELECT
     gd.name AS domain,
     ROUND(AVG(ar.value)::numeric,3) AS avg_au,
     MIN(ar.value) AS min_au,
@@ -121,25 +124,81 @@ ORDER BY avg_au DESC;
 
 
 --------------------------------------------------------
--- 9. Check sample overlap integrity
+-- 9. Au grade ranges (background / anomalous / high)
 --------------------------------------------------------
 
-SELECT drillhole_id, COUNT(*)
-FROM samples
-GROUP BY drillhole_id;
+SELECT
+    CASE
+        WHEN ar.value < 0.10  THEN 'background (<0.10)'
+        WHEN ar.value < 0.50  THEN 'low-anomalous (0.10-0.50)'
+        WHEN ar.value < 2.00  THEN 'anomalous (0.50-2.00)'
+        ELSE                       'high-grade (>=2.00)'
+    END AS grade_class,
+    COUNT(*) AS n_assays,
+    ROUND(MIN(ar.value)::numeric, 4) AS min_au,
+    ROUND(MAX(ar.value)::numeric, 4) AS max_au,
+    ROUND(AVG(ar.value)::numeric, 4) AS avg_au
+FROM assay_results ar
+WHERE ar.element_id = (SELECT id FROM elements WHERE symbol = 'Au')
+GROUP BY grade_class
+ORDER BY min_au;
 
 
 --------------------------------------------------------
--- 10. Structural measurements check
+-- 10. Zones per drillhole
+--------------------------------------------------------
+
+SELECT
+    dh.hole_id,
+    COUNT(mi.id) AS n_zones,
+    STRING_AGG(mt.code, ', ' ORDER BY lower(mi.interval)) AS zone_types
+FROM drillholes dh
+LEFT JOIN mineralization_intervals mi
+    ON mi.drillhole_id = dh.id
+LEFT JOIN mineralization_types mt
+    ON mt.id = mi.mineralization_id
+GROUP BY dh.hole_id
+ORDER BY dh.hole_id;
+
+
+--------------------------------------------------------
+-- 11. Example drillholes: depth intervals + Au pattern
+--     (first 3 drillholes, sampled every 20 m)
+--------------------------------------------------------
+
+SELECT
+    dh.hole_id,
+    lower(s.interval) AS from_m,
+    upper(s.interval) AS to_m,
+    ROUND(ar.value::numeric, 3) AS au,
+    COALESCE(mt.code, 'BG') AS zone
+FROM drillholes dh
+JOIN samples s          ON s.drillhole_id = dh.id
+JOIN assay_results ar   ON ar.sample_id = s.id
+                       AND ar.element_id = (SELECT id FROM elements WHERE symbol = 'Au')
+LEFT JOIN mineralization_intervals mi
+    ON mi.drillhole_id = s.drillhole_id
+   AND s.interval && mi.interval
+LEFT JOIN mineralization_types mt
+    ON mt.id = mi.mineralization_id
+WHERE dh.hole_id IN ('SJDH-001', 'SJDH-015', 'SJDH-025')
+  AND MOD(lower(s.interval)::int, 20) = 0
+ORDER BY dh.hole_id, from_m;
+
+
+--------------------------------------------------------
+-- 12. Structural measurements check
 --------------------------------------------------------
 
 SELECT COUNT(*) AS structural_measurements
 FROM structural_measurements;
 
 
---ley de oro
+--------------------------------------------------------
+-- 13. Gold grade by domain (summary)
+--------------------------------------------------------
 
-SELECT 
+SELECT
     gd.name,
     ROUND(AVG(ar.value)::numeric,3) AS avg_au,
     COUNT(*) AS samples
