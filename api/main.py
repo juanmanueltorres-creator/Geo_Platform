@@ -165,6 +165,8 @@ def root():
             "drillhole_summary": "/drillholes/{id}/summary",
             "drillhole_assays": "/drillholes/{id}/assays (?element=)",
             "drillhole_lithology": "/drillholes/{id}/lithology (?from_depth=, ?to_depth=)",
+            "drillhole_alteration": "/drillholes/{id}/alteration",
+            "drillhole_geology_summary": "/drillholes/{id}/geology-summary",
             "geospatial_locations": "/geospatial/drillhole-locations",
             "geospatial_domains": "/geospatial/domains (?type=)",
             "geospatial_geojson": "/geospatial/drillholes-geojson"
@@ -583,6 +585,181 @@ def get_lithology(
         raise HTTPException(
             status_code=500,
             detail="Error fetching lithology data"
+        )
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            db_pool.putconn(conn)
+
+# =============================
+# DRILLHOLE ALTERATION
+# =============================
+
+@app.get("/drillholes/{drillhole_id}/alteration")
+def get_alteration(drillhole_id: str):
+    """
+    Get alteration zonation for a drillhole.
+
+    Returns intervals with alteration type, intensity, and depth range,
+    ordered from surface to depth.
+    """
+    conn = None
+    cur = None
+
+    try:
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        drillhole_uuid = _resolve_drillhole_uuid(cur, drillhole_id)
+
+        cur.execute("""
+            SELECT
+                at.code,
+                at.name,
+                ae.intensity,
+                lower(ae.interval)::int AS from_depth,
+                upper(ae.interval)::int AS to_depth
+            FROM alteration_events ae
+            JOIN alteration_types at ON at.id = ae.alteration_id
+            WHERE ae.drillhole_id = %s
+            ORDER BY lower(ae.interval)
+        """, [drillhole_uuid])
+
+        rows = cur.fetchall()
+
+        if not rows:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No alteration data for {drillhole_id}"
+            )
+
+        logger.info(f"Fetched {len(rows)} alteration intervals for {drillhole_id}")
+
+        return {
+            "drillhole_id": drillhole_id,
+            "interval_count": len(rows),
+            "data": [
+                {
+                    "code": r["code"],
+                    "name": r["name"],
+                    "intensity": r["intensity"],
+                    "from": r["from_depth"],
+                    "to": r["to_depth"],
+                }
+                for r in rows
+            ]
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(f"Error fetching alteration for {drillhole_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Error fetching alteration data"
+        )
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            db_pool.putconn(conn)
+
+# =============================
+# DRILLHOLE GEOLOGY SUMMARY
+# =============================
+
+@app.get("/drillholes/{drillhole_id}/geology-summary")
+def get_geology_summary(drillhole_id: str):
+    """
+    Compact geological summary for a drillhole: dominant lithology,
+    lithology sequence, dominant alteration, alteration sequence,
+    and a short interpretation.
+    """
+    conn = None
+    cur = None
+
+    try:
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        drillhole_uuid = _resolve_drillhole_uuid(cur, drillhole_id)
+
+        # Lithology: ordered intervals
+        cur.execute("""
+            SELECT l.code, l.name,
+                   (upper(li.interval) - lower(li.interval))::int AS thickness
+            FROM lithology_intervals li
+            JOIN lithologies l ON l.id = li.lithology_id
+            WHERE li.drillhole_id = %s
+            ORDER BY lower(li.interval)
+        """, [drillhole_uuid])
+        lith_rows = cur.fetchall()
+
+        # Alteration: ordered intervals
+        cur.execute("""
+            SELECT at.code, at.name, ae.intensity,
+                   (upper(ae.interval) - lower(ae.interval))::int AS thickness
+            FROM alteration_events ae
+            JOIN alteration_types at ON at.id = ae.alteration_id
+            WHERE ae.drillhole_id = %s
+            ORDER BY lower(ae.interval)
+        """, [drillhole_uuid])
+        alt_rows = cur.fetchall()
+
+        # Build lithology summary
+        lith_sequence = []
+        lith_totals: dict[str, tuple[str, int]] = {}
+        for r in lith_rows:
+            if not lith_sequence or lith_sequence[-1] != r["code"]:
+                lith_sequence.append(r["code"])
+            name, prev = lith_totals.get(r["code"], (r["name"], 0))
+            lith_totals[r["code"]] = (name, prev + r["thickness"])
+
+        dom_lith = max(lith_totals.items(), key=lambda x: x[1][1])[1][0] if lith_totals else None
+
+        # Build alteration summary
+        alt_sequence = []
+        alt_totals: dict[str, tuple[str, int]] = {}
+        for r in alt_rows:
+            if not alt_sequence or alt_sequence[-1] != r["code"]:
+                alt_sequence.append(r["code"])
+            name, prev = alt_totals.get(r["code"], (r["name"], 0))
+            alt_totals[r["code"]] = (name, prev + r["thickness"])
+
+        dom_alt = max(alt_totals.items(), key=lambda x: x[1][1])[1][0] if alt_totals else None
+
+        # Simple interpretation
+        interpretation = None
+        if dom_lith and dom_alt:
+            interpretation = f"{dom_lith} host rock with {dom_alt.lower()} alteration"
+            if "BRX" in lith_sequence or "Breccia" in (dom_lith or ""):
+                interpretation += " — breccia-hosted system"
+            elif "DIO" in lith_sequence and "POT" in alt_sequence:
+                interpretation += " — intrusive-related mineralization"
+
+        logger.info(f"Geology summary for {drillhole_id}: lith={dom_lith}, alt={dom_alt}")
+
+        return {
+            "hole_id": drillhole_id,
+            "dominant_lithology": dom_lith,
+            "lithology_sequence": lith_sequence,
+            "dominant_alteration": dom_alt,
+            "alteration_sequence": alt_sequence,
+            "interpretation": interpretation,
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(f"Error fetching geology summary for {drillhole_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Error fetching geology summary"
         )
 
     finally:
