@@ -8,6 +8,7 @@ interface TopDrillholesProps {
   drillholes: Drillhole[]
   onSelectDrillhole?: (drillhole: Drillhole) => void
   selectedDrillholeId?: string | null
+  searchTerm?: string
 }
 
 interface DrillholesWithSummary {
@@ -15,7 +16,7 @@ interface DrillholesWithSummary {
   summary: DrillholeSummary
 }
 
-export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillholeId }: TopDrillholesProps) {
+export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillholeId, searchTerm = '' }: TopDrillholesProps) {
   const [ranked, setRanked] = useState<DrillholesWithSummary[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -88,6 +89,10 @@ export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillhole
 
   const maxAu = Math.max(...ranked.map(r => r.summary.max_au || 0), 1)
 
+  const filtered = searchTerm
+    ? ranked.filter(r => r.drillhole.drillhole.toLowerCase().includes(searchTerm.toLowerCase()))
+    : ranked
+
   return (
     <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-slate-800 dark:to-slate-900 border-amber-200 dark:border-amber-900">
       <CardHeader>
@@ -97,7 +102,12 @@ export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillhole
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {ranked.slice(0, 4).map((item, idx) => (
+        {filtered.length === 0 && searchTerm ? (
+          <p className="text-sm text-slate-500 dark:text-slate-400 py-2 text-center">
+            No matches for "{searchTerm}"
+          </p>
+        ) : (
+          filtered.slice(0, 4).map((item, idx) => (
           <div
             key={item.drillhole.drillhole_id}
             onClick={() => onSelectDrillhole?.(item.drillhole)}
@@ -138,7 +148,8 @@ export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillhole
               </div>
             </div>
           </div>
-        ))}
+        ))
+        )}
 
         {/* CTA */}
         <div className="pt-2 border-t border-amber-200 dark:border-amber-900">

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { GeoJSONFeatureCollection, DrillholeSummary, AssayResponse } from '@/types'
+import type { GeoJSONFeatureCollection, DrillholeSummary, AssayResponse, AlterationResponse, GeologySummary } from '@/types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://geo-plataform.onrender.com'
 
@@ -50,5 +50,17 @@ export const api = {
 
     const response = await apiClient.get(`/drillholes/${drillholeId}/lithology`, { params })
     return response.data
-  }
+  },
+
+  // Get alteration zonation
+  getAlteration: async (drillholeId: string): Promise<AlterationResponse> => {
+    const response = await apiClient.get(`/drillholes/${drillholeId}/alteration`)
+    return response.data
+  },
+
+  // Get compact geology summary (lithology + alteration)
+  getGeologySummary: async (drillholeId: string): Promise<GeologySummary> => {
+    const response = await apiClient.get(`/drillholes/${drillholeId}/geology-summary`)
+    return response.data
+  },
 }

@@ -33,6 +33,29 @@ export interface AssayResponse {
   data: Assay[]
 }
 
+export interface AlterationInterval {
+  code: string
+  name: string
+  intensity: string
+  from: number
+  to: number
+}
+
+export interface AlterationResponse {
+  drillhole_id: string
+  interval_count: number
+  data: AlterationInterval[]
+}
+
+export interface GeologySummary {
+  hole_id: string
+  dominant_lithology: string | null
+  lithology_sequence: string[]
+  dominant_alteration: string | null
+  alteration_sequence: string[]
+  interpretation: string | null
+}
+
 export interface GeoJSONFeatureCollection {
   type: "FeatureCollection"
   count: number

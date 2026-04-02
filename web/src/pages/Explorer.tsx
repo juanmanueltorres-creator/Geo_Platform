@@ -13,7 +13,6 @@ import type { Drillhole } from '@/types'
 export function Explorer() {
   const [selectedDrillhole, setSelectedDrillhole] = useState<Drillhole | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [auFilter, setAuFilter] = useState({ min: 0, max: 10 })
   const [allDrillholes, setAllDrillholes] = useState<Drillhole[]>([])
 
   return (
@@ -67,9 +66,6 @@ export function Explorer() {
             <SearchFilter
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
-              auFilter={auFilter}
-              onAuFilterChange={setAuFilter}
-              maxAuValue={10}
             />
 
             {/* Top Drillholes (Premium Feature) */}
@@ -77,6 +73,7 @@ export function Explorer() {
               drillholes={allDrillholes}
               onSelectDrillhole={setSelectedDrillhole}
               selectedDrillholeId={selectedDrillhole?.drillhole_id ?? null}
+              searchTerm={searchTerm}
             />
 
             {/* Selected Drillhole Summary */}
@@ -84,6 +81,7 @@ export function Explorer() {
               <DrillholeSummaryCard
                 drillholeId={selectedDrillhole.drillhole_id}
                 holeName={selectedDrillhole.drillhole}
+                maxDepth={selectedDrillhole.max_depth}
               />
             ) : (
               <Card>
