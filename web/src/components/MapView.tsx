@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, WMSTileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { MapContainer, WMSTileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { api } from '@/lib/api'
 import type { Drillhole } from '@/types'
@@ -55,6 +55,71 @@ function FitBounds({ drillholes }: { drillholes: Drillhole[] }) {
   return null
 }
 
+/**
+ * Swap the basemap URL on an existing Leaflet tile layer instead of
+ * unmount/remount.  This preserves the WMS overlay z-order.
+ */
+function DynamicTileLayer({ url, attribution, maxZoom }: { url: string; attribution: string; maxZoom: number }) {
+  const map = useMap()
+  const layerRef = useRef<L.TileLayer | null>(null)
+
+  useEffect(() => {
+    if (layerRef.current) {
+      map.removeLayer(layerRef.current)
+    }
+    const tl = L.tileLayer(url, { attribution, maxZoom })
+    tl.addTo(map)
+    tl.bringToBack()          // keep basemap behind all overlays
+    layerRef.current = tl
+    return () => { map.removeLayer(tl) }
+  }, [url, attribution, maxZoom, map])
+
+  return null
+}
+
+/** Simple fullscreen toggle — uses the Fullscreen API on the map container */
+function FullscreenToggle() {
+  const map = useMap()
+  const [isFs, setIsFs] = useState(false)
+
+  useEffect(() => {
+    const onChange = () => setIsFs(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [])
+
+  const toggle = useCallback(() => {
+    const el = map.getContainer().closest('.leaflet-container') as HTMLElement | null
+    if (!el) return
+    if (!document.fullscreenElement) {
+      el.requestFullscreen().then(() => setTimeout(() => map.invalidateSize(), 200))
+    } else {
+      document.exitFullscreen().then(() => setTimeout(() => map.invalidateSize(), 200))
+    }
+  }, [map])
+
+  return (
+    <button
+      onClick={toggle}
+      aria-label={isFs ? 'Exit fullscreen' : 'Expand map'}
+      title={isFs ? 'Exit fullscreen' : 'Expand map'}
+      style={{
+        position: 'absolute', bottom: 16, right: 16, zIndex: 1000,
+        width: 36, height: 36, border: '2px solid rgba(255,255,255,0.8)',
+        borderRadius: 8, cursor: 'pointer',
+        background: 'rgba(30,30,30,0.85)', boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 17, color: '#fff', backdropFilter: 'blur(4px)',
+        transition: 'background 0.15s',
+      }}
+      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(60,60,60,0.95)')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(30,30,30,0.85)')}
+    >
+      {isFs ? '✕' : '⛶'}
+    </button>
+  )
+}
+
 interface MapViewProps {
   onDrillholeSelect?: (drillhole: Drillhole) => void
   onDrillholesLoaded?: (drillholes: Drillhole[]) => void
@@ -77,7 +142,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   // SEGEMAR WMS geological overlay state
   const [showGeologyWMS, setShowGeologyWMS] = useState(true)
   const [showFaultsWMS, setShowFaultsWMS] = useState(true)
-  const [wmsOpacity, setWmsOpacity] = useState(0.55)
+  const [wmsOpacity, setWmsOpacity] = useState(0.35)
 
   const toggleLayer = useCallback((key: GeologyLayerKey) => {
     setVisibleLayers(prev => ({ ...prev, [key]: !prev[key] }))
@@ -143,12 +208,12 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       className="z-0"
     >
       <FitBounds drillholes={drillholes} />
-      <TileLayer
-        key={tileLayer}
+      <DynamicTileLayer
         url={TILE_LAYERS[tileLayer].url}
         attribution={TILE_LAYERS[tileLayer].attribution}
         maxZoom={TILE_LAYERS[tileLayer].maxZoom}
       />
+      <FullscreenToggle />
 
       {/* Layer switcher button */}
       <div
