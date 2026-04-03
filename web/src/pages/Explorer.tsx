@@ -22,12 +22,12 @@ export function Explorer() {
       <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-geo-primary to-geo-accent rounded-lg flex items-center justify-center">
-              <Zap className="w-6 h-6 text-white" />
+            <div className="w-9 h-9 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
+              <Zap className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">🌍 GeoPlatform</h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Mineral Exploration Dashboard</p>
+              <h1 className="text-xl font-bold tracking-tight">GeoPlatform</h1>
+              <p className="text-xs text-slate-500">Mineral Exploration Dashboard</p>
             </div>
           </div>
           <ThemeToggle />
@@ -63,7 +63,7 @@ export function Explorer() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Search & Filter */}
             <SearchFilter
               searchTerm={searchTerm}
@@ -102,7 +102,7 @@ export function Explorer() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mt-12">
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-xs text-slate-500 dark:text-slate-600">
           <p>GeoPlatform · Mineral Exploration Dashboard · React + Vite + FastAPI</p>
         </div>

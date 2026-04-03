@@ -57,15 +57,18 @@ export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillhole
 
   if (loading) {
     return (
-      <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-slate-800 dark:to-slate-900 border-amber-200 dark:border-amber-900">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-base">
-            <Trophy className="w-5 h-5 text-amber-500" />
-            <span>Top Drillholes por Au</span>
+      <Card className="border-slate-700">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center space-x-2 text-sm">
+            <Trophy className="w-4 h-4 text-amber-500" />
+            <span>Drillholes by Au</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-slate-600 dark:text-slate-400">Cargando datos...</p>
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <div className="h-3.5 w-3.5 border-2 border-slate-600 border-t-amber-400 rounded-full animate-spin" />
+            Loading summaries...
+          </div>
         </CardContent>
       </Card>
     )
@@ -73,15 +76,15 @@ export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillhole
 
   if (ranked.length === 0) {
     return (
-      <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-slate-800 dark:to-slate-900 border-amber-200 dark:border-amber-900">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-base">
-            <Trophy className="w-5 h-5 text-amber-500" />
-            <span>Top Drillholes por Au</span>
+      <Card className="border-slate-700">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center space-x-2 text-sm">
+            <Trophy className="w-4 h-4 text-amber-500" />
+            <span>Drillholes by Au</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-slate-600 dark:text-slate-400">Sin datos disponibles</p>
+          <p className="text-sm text-slate-500">No data available</p>
         </CardContent>
       </Card>
     )
@@ -94,16 +97,16 @@ export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillhole
     : ranked
 
   return (
-    <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-slate-800 dark:to-slate-900 border-amber-200 dark:border-amber-900">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2 text-base">
-          <Trophy className="w-5 h-5 text-amber-500" />
-          <span>Top Drillholes por Au 🏆</span>
+    <Card className="border-slate-700">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center space-x-2 text-sm">
+          <Trophy className="w-4 h-4 text-amber-500" />
+          <span>Drillholes by Au</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2">
         {filtered.length === 0 && searchTerm ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400 py-2 text-center">
+          <p className="text-sm text-slate-500 py-2 text-center">
             No matches for "{searchTerm}"
           </p>
         ) : (
@@ -111,30 +114,30 @@ export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillhole
           <div
             key={item.drillhole.drillhole_id}
             onClick={() => onSelectDrillhole?.(item.drillhole)}
-            className={`space-y-2 p-3 rounded-lg cursor-pointer transition-all ${
+            className={`space-y-1.5 p-2.5 rounded-lg cursor-pointer transition-all ${
               item.drillhole.drillhole_id === selectedDrillholeId
-                ? 'bg-amber-100 dark:bg-amber-900/40 ring-2 ring-amber-500 shadow-lg'
-                : 'bg-white dark:bg-slate-700/50 hover:shadow-md'
+                ? 'bg-amber-900/30 ring-1 ring-amber-500'
+                : 'bg-slate-800/50 hover:bg-slate-700/60'
             }`}
           >
             {/* Rank + Name */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center">
+                <div className="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">
                   {idx + 1}
                 </div>
-                <p className="font-semibold text-slate-900 dark:text-white text-sm">
+                <p className="font-medium text-slate-200 text-sm">
                   {item.drillhole.drillhole}
                 </p>
               </div>
-              <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
-                {item.summary.max_au?.toFixed(2)} ppb
+              <span className="text-xs font-bold text-amber-400">
+                {item.summary.max_au?.toFixed(2)} ppm
               </span>
             </div>
 
             {/* Visual Bar */}
-            <div className="space-y-1">
-              <div className="h-2 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
+            <div className="space-y-0.5">
+              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-amber-400 to-amber-600 transition-all duration-500"
                   style={{
@@ -142,9 +145,9 @@ export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillhole
                   }}
                 />
               </div>
-              <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
+              <div className="flex justify-between text-[11px] text-slate-500">
                 <span>{item.summary.total_samples} samples</span>
-                <span>Avg: {item.summary.avg_au?.toFixed(2) || '—'} ppb</span>
+                <span>Avg: {item.summary.avg_au?.toFixed(2) || '—'} ppm</span>
               </div>
             </div>
           </div>
@@ -152,10 +155,10 @@ export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillhole
         )}
 
         {/* CTA */}
-        <div className="pt-2 border-t border-amber-200 dark:border-amber-900">
-          <p className="text-xs text-slate-600 dark:text-slate-400 flex items-center space-x-1">
+        <div className="pt-1.5 border-t border-slate-700">
+          <p className="text-[11px] text-slate-500 flex items-center space-x-1">
             <Zap className="w-3 h-3 text-amber-500" />
-            <span>Haz clic para ver gráficos de profundidad</span>
+            <span>Click a drillhole for depth profile</span>
           </p>
         </div>
       </CardContent>
