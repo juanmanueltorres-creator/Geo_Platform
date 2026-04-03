@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TrendingUp, Zap } from 'lucide-react'
+import { MousePointerClick, Zap } from 'lucide-react'
 import { MapView } from '@/components/MapView'
 import { DrillholeSummaryCard } from '@/components/DrillholeSummaryCard'
 import { AssayChart } from '@/components/AssayChart'
@@ -7,7 +7,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { HeroSection } from '@/components/HeroSection'
 import { SearchFilter } from '@/components/SearchFilter'
 import { TopDrillholes } from '@/components/TopDrillholes'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import type { Drillhole, PeakZone } from '@/types'
 
 export function Explorer() {
@@ -27,7 +27,7 @@ export function Explorer() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">🌍 GeoPlatform</h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Mineral Exploration Explorer v3.0</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Mineral Exploration Dashboard</p>
             </div>
           </div>
           <ThemeToggle />
@@ -35,14 +35,14 @@ export function Explorer() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
         {/* Hero Section */}
         <HeroSection />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Map Section */}
           <div className="lg:col-span-2">
-            <Card className="h-[600px]">
+            <Card className="h-[700px]">
               <MapView 
                 onDrillholeSelect={setSelectedDrillhole}
                 onDrillholesLoaded={setAllDrillholes}
@@ -87,26 +87,13 @@ export function Explorer() {
                 peakZone={peakZone}
               />
             ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <TrendingUp className="w-5 h-5 text-slate-400" />
-                    <span>Quick Info</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">API Status</p>
-                    <p className="font-semibold text-green-600 dark:text-green-400 flex items-center space-x-2">
-                      <span className="w-2 h-2 bg-green-600 dark:bg-green-400 rounded-full" />
-                      <span>Connected</span>
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Usa el buscador para encontrar perforaciones o haz clic en el mapa para ver detalles.
-                    </p>
-                  </div>
+              <Card className="border-dashed border-slate-700">
+                <CardContent className="py-10 text-center space-y-3">
+                  <MousePointerClick className="w-8 h-8 text-slate-600 mx-auto" />
+                  <p className="text-sm font-medium text-slate-400">No drillhole selected</p>
+                  <p className="text-xs text-slate-600 max-w-[200px] mx-auto leading-relaxed">
+                    Click a marker on the map or select from the ranked list above to see the analysis panel.
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -116,8 +103,8 @@ export function Explorer() {
 
       {/* Footer */}
       <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
-          <p>GEO-PLATFORM v3.0 | Built with React, Vite & Shadcn/ui</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-xs text-slate-500 dark:text-slate-600">
+          <p>GeoPlatform · Mineral Exploration Dashboard · React + Vite + FastAPI</p>
         </div>
       </footer>
     </div>

@@ -84,10 +84,13 @@ export function AssayChart({ drillholeId, holeName, onPeakComputed }: AssayChart
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border-slate-700">
         <CardHeader>
-          <CardTitle className="text-lg">Assay Profile - {holeName}</CardTitle>
-          <CardDescription>Loading chart...</CardDescription>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <div className="h-4 w-4 border-2 border-slate-600 border-t-amber-400 rounded-full animate-spin" />
+            Assay Profile — {holeName}
+          </CardTitle>
+          <CardDescription>Loading depth profile...</CardDescription>
         </CardHeader>
       </Card>
     )
@@ -95,11 +98,11 @@ export function AssayChart({ drillholeId, holeName, onPeakComputed }: AssayChart
 
   if (error || data.length === 0) {
     return (
-      <Card className="border-yellow-200 dark:border-yellow-800">
+      <Card className="border-slate-700">
         <CardHeader>
-          <CardTitle className="text-lg">Assay Profile - {holeName}</CardTitle>
-          <CardDescription className="text-yellow-600 dark:text-yellow-400">
-            {error || 'No assay data available'}
+          <CardTitle className="text-lg">Assay Profile — {holeName}</CardTitle>
+          <CardDescription className="text-yellow-500">
+            {error || 'No assay data available for this drillhole'}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -110,11 +113,11 @@ export function AssayChart({ drillholeId, holeName, onPeakComputed }: AssayChart
   const maxDepth = Math.max(...data.map(d => d.toDepth))
 
   return (
-    <Card>
+    <Card className="border-slate-700">
       <CardHeader>
-        <CardTitle className="text-lg">Assay Profile - {holeName}</CardTitle>
+        <CardTitle className="text-lg">Assay Profile — {holeName}</CardTitle>
         <CardDescription>
-          Depth profile: Au (ppm){hasCu ? ' + Cu (%)' : ''}
+          Depth profile: <span className="text-amber-400">Au (ppm)</span>{hasCu ? <> + <span className="text-cyan-400">Cu (%)</span></> : ''}
         </CardDescription>
       </CardHeader>
       <CardContent>
