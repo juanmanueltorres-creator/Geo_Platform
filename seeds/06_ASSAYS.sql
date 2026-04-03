@@ -20,19 +20,19 @@ SELECT id INTO v_lab_id    FROM laboratories   WHERE name   = 'ALS Mendoza';
 
 FOR r IN SELECT id FROM samples LOOP
 
-    -- Background Au: 0.01 – 0.10
+    -- Background Au: 0.005 – 0.03 ppm (barren host rock)
     INSERT INTO assay_results
         (sample_id, element_id, method_id, laboratory_id, value, unit)
     VALUES
         (r.id, v_au_id, v_method_id, v_lab_id,
-         ROUND((0.01 + random() * 0.09)::numeric, 4), 'ppm');
+         ROUND((0.005 + random() * 0.025)::numeric, 4), 'ppm');
 
-    -- Background Cu: 0.01 – 0.05 %
+    -- Background Cu: 0.005 – 0.03 % (barren host rock)
     INSERT INTO assay_results
         (sample_id, element_id, method_id, laboratory_id, value, unit)
     VALUES
         (r.id, v_cu_id, v_method_id, v_lab_id,
-         ROUND((0.01 + random() * 0.04)::numeric, 4), '%');
+         ROUND((0.005 + random() * 0.025)::numeric, 4), '%');
 
 END LOOP;
 

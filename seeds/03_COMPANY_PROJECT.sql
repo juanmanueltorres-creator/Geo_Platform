@@ -3,12 +3,12 @@
 -- =====================================================
 
 INSERT INTO companies (name)
-VALUES ('Demo Exploration Co');
+VALUES ('Filo del Sol Exploración SA');
 
 INSERT INTO projects (company_id, name, location, crs)
 VALUES (
     (SELECT id FROM companies ORDER BY created_at DESC LIMIT 1),
-    'Andean Synthetic Project',
-    'San Juan - Argentina',
+    'Filo del Sol Cu-Au Project',
+    'Vicuña Belt, San Juan - Argentina / Atacama - Chile',
     4326
 );

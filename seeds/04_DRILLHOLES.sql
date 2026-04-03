@@ -1,7 +1,8 @@
 -- =====================================================
 -- 04_DRILLHOLES.sql
--- 30 drillholes — Miocene porphyry–epithermal system
--- Frontal Cordillera, San Juan, Argentina
+-- 30 drillholes — High-sulphidation epithermal Cu-Au-Ag
+-- over porphyry Cu-Au. Vicuña Belt, San Juan, Argentina.
+-- Coordinates aligned to real Filo del Sol project area.
 -- =====================================================
 
 SELECT setseed(0.42);
@@ -11,9 +12,10 @@ DECLARE
     v_project_id   UUID;
     v_drillhole_id UUID;
 
-    -- Project center: Frontal Cordillera, El Indio belt region
-    v_center_lat NUMERIC := -30.1800;
-    v_center_lon NUMERIC := -69.3500;
+    -- Project center: Filo del Sol, Vicuña Belt
+    -- Real coordinates: 28°29'26"S 69°39'26"W (Wikipedia/PFS)
+    v_center_lat NUMERIC := -28.4906;
+    v_center_lon NUMERIC := -69.6572;
     v_base_elev  NUMERIC := 4200;
 
     v_i       INT;
@@ -67,7 +69,7 @@ BEGIN
         )
         VALUES (
             v_project_id,
-            'SJDH-' || LPAD(v_i::TEXT, 3, '0'),
+            'FSDH-' || LPAD(v_i::TEXT, 3, '0'),
             'Diamond',
             'Completed',
             ROUND(v_depth)

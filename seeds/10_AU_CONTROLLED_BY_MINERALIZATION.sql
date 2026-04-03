@@ -7,10 +7,11 @@
 -- background values set by seed 06.
 --
 -- Grade model (Au, stored as numeric with unit 'ppm'):
---   Background:   0.01 – 0.10
---   VEIN  edges → 0.30,  peak → 4.50
---   STK   edges → 0.20,  peak → 2.50
---   DIS   edges → 0.15,  peak → 1.50
+-- Aligned to real Filo del Sol PFS: avg 0.33 g/t Au, avg 0.38% Cu
+--   Background:   0.005 – 0.03
+--   VEIN  edges → 0.08,  peak → 1.20
+--   STK   edges → 0.06,  peak → 0.60
+--   DIS   edges → 0.04,  peak → 0.30
 --
 -- Bell factor = exp( -3 · (d / hw)² )
 --   d  = |sample_mid − zone_mid|
@@ -19,88 +20,16 @@
 
 SELECT setseed(0.42);
 
--- 1 ── Reset ALL Au to background
+-- 1 ── Reset ALL Au to background (low, realistic for barren host rock)
 UPDATE assay_results
-SET value = ROUND((0.01 + random() * 0.09)::numeric, 4)
+SET value = ROUND((0.005 + random() * 0.025)::numeric, 4)
 WHERE element_id = (SELECT id FROM elements WHERE symbol = 'Au');
 
--- 2 ── Epithermal VEIN zone  (high Au)
+-- 2 ── Epithermal VEIN zone  (best Au, high-sulphidation style)
 UPDATE assay_results ar
 SET value = GREATEST(0.005, ROUND((
-    0.30
-  + (4.50 - 0.30)
-    * EXP(-3.0 * POWER(
-        ABS(
-            ((lower(s.interval) + upper(s.interval)) / 2.0)
-          - ((lower(m.interval) + upper(m.interval)) / 2.0)
-        )
-        / NULLIF((upper(m.interval) - lower(m.interval)) / 2.0, 0)
-      , 2))
-  + (random() - 0.5) * 0.6
-)::numeric, 4))
-FROM samples s
-JOIN mineralization_intervals m
-    ON  m.drillhole_id = s.drillhole_id
-    AND s.interval && m.interval
-JOIN mineralization_types mt
-    ON  mt.id = m.mineralization_id
-WHERE ar.sample_id  = s.id
-  AND ar.element_id = (SELECT id FROM elements WHERE symbol = 'Au')
-  AND mt.code       = 'VEIN';
-
--- 3 ── Stockwork STK zone  (moderate-high Au)
-UPDATE assay_results ar
-SET value = GREATEST(0.005, ROUND((
-    0.20
-  + (2.50 - 0.20)
-    * EXP(-3.0 * POWER(
-        ABS(
-            ((lower(s.interval) + upper(s.interval)) / 2.0)
-          - ((lower(m.interval) + upper(m.interval)) / 2.0)
-        )
-        / NULLIF((upper(m.interval) - lower(m.interval)) / 2.0, 0)
-      , 2))
-  + (random() - 0.5) * 0.5
-)::numeric, 4))
-FROM samples s
-JOIN mineralization_intervals m
-    ON  m.drillhole_id = s.drillhole_id
-    AND s.interval && m.interval
-JOIN mineralization_types mt
-    ON  mt.id = m.mineralization_id
-WHERE ar.sample_id  = s.id
-  AND ar.element_id = (SELECT id FROM elements WHERE symbol = 'Au')
-  AND mt.code       = 'STK';
-
--- 4 ── Porphyry DIS zone  (moderate Au)
-UPDATE assay_results ar
-SET value = GREATEST(0.005, ROUND((
-    0.15
-  + (1.50 - 0.15)
-    * EXP(-3.0 * POWER(
-        ABS(
-            ((lower(s.interval) + upper(s.interval)) / 2.0)
-          - ((lower(m.interval) + upper(m.interval)) / 2.0)
-        )
-        / NULLIF((upper(m.interval) - lower(m.interval)) / 2.0, 0)
-      , 2))
-  + (random() - 0.5) * 0.3
-)::numeric, 4))
-FROM samples s
-JOIN mineralization_intervals m
-    ON  m.drillhole_id = s.drillhole_id
-    AND s.interval && m.interval
-JOIN mineralization_types mt
-    ON  mt.id = m.mineralization_id
-WHERE ar.sample_id  = s.id
-  AND ar.element_id = (SELECT id FROM elements WHERE symbol = 'Au')
-  AND mt.code       = 'DIS';
-
--- 5 ── Cu boost in porphyry DIS zone (peak 1.2 %)
-UPDATE assay_results ar
-SET value = GREATEST(0.005, ROUND((
-    0.10
-  + (1.20 - 0.10)
+    0.08
+  + (1.20 - 0.08)
     * EXP(-3.0 * POWER(
         ABS(
             ((lower(s.interval) + upper(s.interval)) / 2.0)
@@ -117,14 +46,14 @@ JOIN mineralization_intervals m
 JOIN mineralization_types mt
     ON  mt.id = m.mineralization_id
 WHERE ar.sample_id  = s.id
-  AND ar.element_id = (SELECT id FROM elements WHERE symbol = 'Cu')
-  AND mt.code       = 'DIS';
+  AND ar.element_id = (SELECT id FROM elements WHERE symbol = 'Au')
+  AND mt.code       = 'VEIN';
 
--- 6 ── Moderate Cu in stockwork STK zone (peak 0.45 %)
+-- 3 ── Stockwork STK zone  (moderate Au, transition to porphyry)
 UPDATE assay_results ar
 SET value = GREATEST(0.005, ROUND((
-    0.05
-  + (0.45 - 0.05)
+    0.06
+  + (0.60 - 0.06)
     * EXP(-3.0 * POWER(
         ABS(
             ((lower(s.interval) + upper(s.interval)) / 2.0)
@@ -132,7 +61,79 @@ SET value = GREATEST(0.005, ROUND((
         )
         / NULLIF((upper(m.interval) - lower(m.interval)) / 2.0, 0)
       , 2))
-  + (random() - 0.5) * 0.05
+  + (random() - 0.5) * 0.10
+)::numeric, 4))
+FROM samples s
+JOIN mineralization_intervals m
+    ON  m.drillhole_id = s.drillhole_id
+    AND s.interval && m.interval
+JOIN mineralization_types mt
+    ON  mt.id = m.mineralization_id
+WHERE ar.sample_id  = s.id
+  AND ar.element_id = (SELECT id FROM elements WHERE symbol = 'Au')
+  AND mt.code       = 'STK';
+
+-- 4 ── Porphyry DIS zone  (Cu-dominant, moderate Au)
+UPDATE assay_results ar
+SET value = GREATEST(0.005, ROUND((
+    0.04
+  + (0.30 - 0.04)
+    * EXP(-3.0 * POWER(
+        ABS(
+            ((lower(s.interval) + upper(s.interval)) / 2.0)
+          - ((lower(m.interval) + upper(m.interval)) / 2.0)
+        )
+        / NULLIF((upper(m.interval) - lower(m.interval)) / 2.0, 0)
+      , 2))
+  + (random() - 0.5) * 0.06
+)::numeric, 4))
+FROM samples s
+JOIN mineralization_intervals m
+    ON  m.drillhole_id = s.drillhole_id
+    AND s.interval && m.interval
+JOIN mineralization_types mt
+    ON  mt.id = m.mineralization_id
+WHERE ar.sample_id  = s.id
+  AND ar.element_id = (SELECT id FROM elements WHERE symbol = 'Au')
+  AND mt.code       = 'DIS';
+
+-- 5 ── Cu boost in porphyry DIS zone (peak 0.50 %, avg ~0.38%)
+UPDATE assay_results ar
+SET value = GREATEST(0.005, ROUND((
+    0.08
+  + (0.50 - 0.08)
+    * EXP(-3.0 * POWER(
+        ABS(
+            ((lower(s.interval) + upper(s.interval)) / 2.0)
+          - ((lower(m.interval) + upper(m.interval)) / 2.0)
+        )
+        / NULLIF((upper(m.interval) - lower(m.interval)) / 2.0, 0)
+      , 2))
+  + (random() - 0.5) * 0.06
+)::numeric, 4))
+FROM samples s
+JOIN mineralization_intervals m
+    ON  m.drillhole_id = s.drillhole_id
+    AND s.interval && m.interval
+JOIN mineralization_types mt
+    ON  mt.id = m.mineralization_id
+WHERE ar.sample_id  = s.id
+  AND ar.element_id = (SELECT id FROM elements WHERE symbol = 'Cu')
+  AND mt.code       = 'DIS';
+
+-- 6 ── Moderate Cu in stockwork STK zone (peak 0.25 %)
+UPDATE assay_results ar
+SET value = GREATEST(0.005, ROUND((
+    0.03
+  + (0.25 - 0.03)
+    * EXP(-3.0 * POWER(
+        ABS(
+            ((lower(s.interval) + upper(s.interval)) / 2.0)
+          - ((lower(m.interval) + upper(m.interval)) / 2.0)
+        )
+        / NULLIF((upper(m.interval) - lower(m.interval)) / 2.0, 0)
+      , 2))
+  + (random() - 0.5) * 0.03
 )::numeric, 4))
 FROM samples s
 JOIN mineralization_intervals m
