@@ -1,11 +1,14 @@
-import { useEffect, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Popup, GeoJSON, useMap } from 'react-leaflet'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { api } from '@/lib/api'
 import type { Drillhole } from '@/types'
 import {
   riversGeoJSON,
-  outcropsGeoJSON,
+  waterBodiesGeoJSON,
+  glaciersGeoJSON,
+  boundaryGeoJSON,
+  minesGeoJSON,
   GEOLOGY_LAYERS,
   type GeologyLayerKey,
 } from '@/data/geology-layers'
@@ -17,6 +20,12 @@ const TILE_LAYERS = {
     attribution: '&copy; Esri, Maxar, Earthstar Geographics',
     maxZoom: 18,
     label: 'Satellite',
+  },
+  terrain: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri, HERE, Garmin',
+    maxZoom: 18,
+    label: 'Terrain',
   },
   osm: {
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -40,7 +49,7 @@ function FitBounds({ drillholes }: { drillholes: Drillhole[] }) {
         return [c[1], c[0]] as [number, number]
       })
     if (points.length > 0) {
-      map.fitBounds(L.latLngBounds(points), { padding: [30, 30] })
+      map.fitBounds(L.latLngBounds(points), { padding: [120, 120], maxZoom: 12 })
     }
   }, [drillholes, map])
   return null
@@ -59,7 +68,10 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   const [tileLayer, setTileLayer] = useState<TileLayerKey>('esri')
   const [visibleLayers, setVisibleLayers] = useState<Record<GeologyLayerKey, boolean>>({
     rivers: true,
-    outcrops: true,
+    waterBodies: true,
+    glaciers: true,
+    boundary: true,
+    mines: true,
   })
 
   const toggleLayer = useCallback((key: GeologyLayerKey) => {
@@ -92,8 +104,8 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
     fetchDrillholes()
   }, [])
 
-  // Fallback center — overridden by FitBounds once data loads
-  const defaultCenter = [-30.18, -69.35] as [number, number]
+  // Fallback center — Filo del Sol project, overridden by FitBounds once data loads
+  const defaultCenter = [-28.49, -69.66] as [number, number]
 
   if (loading) {
     return (
@@ -161,19 +173,24 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         const coords = hole.geometry?.coordinates as [number, number]
         if (!coords) return null
         const isSelected = hole.drillhole_id === selectedDrillholeId
+        const size = isSelected ? 18 : 12
+        const color = isSelected ? '#facc15' : '#e11d48'
+        const border = isSelected ? '#92400e' : '#fff'
+
+        const icon = L.divIcon({
+          className: '',
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+          html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24">
+            <polygon points="12,2 22,12 12,22 2,12" fill="${color}" stroke="${border}" stroke-width="2"/>
+          </svg>`,
+        })
 
         return (
-          <CircleMarker
+          <Marker
             key={hole.drillhole_id}
-            center={[coords[1], coords[0]]}
-            radius={isSelected ? 12 : 8}
-            pathOptions={{
-              fillColor: isSelected ? '#facc15' : '#ff7800',
-              color: isSelected ? '#b45309' : '#1f77b4',
-              weight: isSelected ? 3 : 2,
-              opacity: 1,
-              fillOpacity: isSelected ? 1 : 0.8,
-            }}
+            position={[coords[1], coords[0]]}
+            icon={icon}
             eventHandlers={{
               click: () => onDrillholeSelect?.(hole)
             }}
@@ -201,25 +218,50 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
                 </table>
               </div>
             </Popup>
-          </CircleMarker>
+          </Marker>
         )
       })}
 
       {/* Geological context layers — real data from IGN Argentina */}
-      {visibleLayers.outcrops && (
+      {visibleLayers.waterBodies && (
         <GeoJSON
-          key="outcrops"
-          data={outcropsGeoJSON}
-          style={() => ({
-            fillColor: '#a78bfa',
-            fillOpacity: 0.15,
-            color: '#7c3aed',
-            weight: 1.5,
-            opacity: 0.5,
-          })}
+          key="waterBodies"
+          data={waterBodiesGeoJSON}
+          style={(feature) => {
+            const kind = feature?.properties?.kind
+            return {
+              fillColor: kind === 'perennial' ? '#0ea5e9' : '#67e8f9',
+              fillOpacity: kind === 'perennial' ? 0.5 : 0.3,
+              color: '#0284c7',
+              weight: 1,
+              opacity: 0.6,
+              dashArray: kind === 'intermittent' ? '4 3' : undefined,
+            }
+          }}
+          onEachFeature={(feature, layer) => {
+            const { name, kind } = feature.properties
+            const label = kind === 'perennial' ? 'Perennial' : 'Intermittent'
+            layer.bindTooltip(`<b>💧 ${name}</b><br/>${label}`, { sticky: true })
+          }}
+        />
+      )}
+
+      {visibleLayers.glaciers && glaciersGeoJSON.features.length > 0 && (
+        <GeoJSON
+          key="glaciers"
+          data={glaciersGeoJSON}
+          pointToLayer={(_feature, latlng) =>
+            L.circleMarker(latlng, {
+              radius: 8,
+              fillColor: '#a5f3fc',
+              color: '#0e7490',
+              weight: 2,
+              fillOpacity: 0.8,
+            })
+          }
           onEachFeature={(feature, layer) => {
             layer.bindTooltip(
-              `<b>${feature.properties.name}</b><br/>Source: ${feature.properties.source}`,
+              `<b>❄️ ${feature.properties.name}</b>`,
               { sticky: true }
             )
           }}
@@ -244,6 +286,47 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
             const kind = feature.properties.kind === 'perennial' ? 'Perennial' : 'Intermittent'
             layer.bindTooltip(
               `<b>${name}</b><br/>${kind} — IGN`,
+              { sticky: true }
+            )
+          }}
+        />
+      )}
+
+      {visibleLayers.boundary && boundaryGeoJSON.features.length > 0 && (
+        <GeoJSON
+          key="boundary"
+          data={boundaryGeoJSON}
+          style={() => ({
+            color: '#dc2626',
+            weight: 2,
+            opacity: 0.7,
+            dashArray: '8 4',
+          })}
+          onEachFeature={(feature, layer) => {
+            layer.bindTooltip(
+              `<b>🇦🇷 ${feature.properties.name} 🇨🇱</b>`,
+              { sticky: true }
+            )
+          }}
+        />
+      )}
+
+      {visibleLayers.mines && minesGeoJSON.features.length > 0 && (
+        <GeoJSON
+          key="mines"
+          data={minesGeoJSON}
+          pointToLayer={(_feature, latlng) =>
+            L.circleMarker(latlng, {
+              radius: 5,
+              fillColor: '#f59e0b',
+              color: '#92400e',
+              weight: 1.5,
+              fillOpacity: 0.9,
+            })
+          }
+          onEachFeature={(feature, layer) => {
+            layer.bindTooltip(
+              `<b>⛏ ${feature.properties.name}</b><br/>Source: ${feature.properties.source}`,
               { sticky: true }
             )
           }}
@@ -281,7 +364,8 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
             />
             <span
               style={{
-                width: 10, height: 10, borderRadius: key === 'outcrops' ? 2 : '50%',
+                width: 10, height: 10,
+                borderRadius: key === 'waterBodies' ? 2 : '50%',
                 background: GEOLOGY_LAYERS[key].color, opacity: 0.8,
                 display: 'inline-block',
               }}

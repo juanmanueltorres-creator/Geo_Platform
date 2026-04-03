@@ -4,7 +4,7 @@ Processes, simplifies, and outputs TypeScript for the frontend.
 
 Data sources:
   - IGN Argentina WFS: https://wms.ign.gob.ar/geoserver/ign/ows
-  - Layers: intermittent streams, perennial rivers, rock outcrops, mining points
+  - Layers: rivers, water bodies, glaciers, international boundary, mining points
 """
 
 import json
@@ -14,10 +14,11 @@ import urllib.parse
 
 WFS_BASE = "https://wms.ign.gob.ar/geoserver/ign/ows"
 
-# Project AOI — centered on drillholes with generous buffer for map context
-# Drillhole center: -30.18, -69.35
-BBOX_TIGHT = "-69.43,-30.25,-69.27,-30.11"  # ~0.16° x 0.14° around center
-BBOX_WIDE = "-69.50,-30.30,-69.20,-30.08"   # wider for perennial rivers
+# Project AOI — Filo del Sol Cu-Au project, Argentina-Chile border
+# Drillhole centroid: -69.6573, -28.4908 (San Juan province, ~4100-4200m a.s.l.)
+BBOX_TIGHT = "-69.73,-28.56,-69.59,-28.42"  # ~0.14° x 0.14° around drillhole cluster
+BBOX_WIDE = "-69.85,-28.65,-69.45,-28.30"   # wider for perennial rivers & mines
+BBOX_MEGA = "-70.2,-29.0,-69.0,-28.0"       # regional for glaciers
 
 OUTPUT_PATH = "../web/src/data/geology-layers.ts"
 
@@ -135,7 +136,7 @@ def process_rivers(intermittent_data, perennial_data):
 
     # Process perennial rivers (higher order)
     for f in perennial_data.get("features", []):
-        geom = simplify_multilinestring(f["geometry"], epsilon=0.0003, precision=4)
+        geom = simplify_multilinestring(f["geometry"], epsilon=0.001, precision=4)
         if geom is None:
             continue
         name = f["properties"].get("nam") or f["properties"].get("fna") or "Unnamed"
@@ -164,19 +165,57 @@ def process_rivers(intermittent_data, perennial_data):
     return {"type": "FeatureCollection", "features": features}
 
 
-def process_outcrops(data):
-    """Process rock outcrop features."""
+def process_water_bodies(perenne_data, intermit_data):
+    """Process water body polygon features (lakes, lagoons)."""
     features = []
-    for f in data.get("features", []):
-        geom = simplify_multipolygon(f["geometry"], epsilon=0.005, precision=4)
+    for f in perenne_data.get("features", []):
+        geom = simplify_multipolygon(f["geometry"], epsilon=0.0005, precision=4)
         if geom is None:
             continue
+        name = f["properties"].get("fna") or f["properties"].get("nam") or "Laguna"
         features.append({
             "type": "Feature",
-            "properties": {
-                "name": "Afloramiento Rocoso",
-                "source": "IGN",
-            },
+            "properties": {"name": name, "kind": "perennial", "source": "IGN"},
+            "geometry": geom,
+        })
+    for f in intermit_data.get("features", []):
+        geom = simplify_multipolygon(f["geometry"], epsilon=0.0005, precision=4)
+        if geom is None:
+            continue
+        name = f["properties"].get("fna") or f["properties"].get("nam") or "Laguna intermitente"
+        features.append({
+            "type": "Feature",
+            "properties": {"name": name, "kind": "intermittent", "source": "IGN"},
+            "geometry": geom,
+        })
+    return {"type": "FeatureCollection", "features": features}
+
+
+def process_glaciers(data):
+    """Process glacier point features."""
+    features = []
+    for f in data.get("features", []):
+        coords = f["geometry"]["coordinates"]
+        name = f["properties"].get("fna") or f["properties"].get("nam") or "Glaciar"
+        features.append({
+            "type": "Feature",
+            "properties": {"name": name, "source": "IGN"},
+            "geometry": {"type": "Point", "coordinates": round_coords(coords, 4)},
+        })
+    return {"type": "FeatureCollection", "features": features}
+
+
+def process_boundary(data):
+    """Process international boundary line."""
+    features = []
+    for f in data.get("features", []):
+        geom = simplify_multilinestring(f["geometry"], epsilon=0.02, precision=3)
+        if geom is None:
+            continue
+        name = f["properties"].get("fna") or "Límite Internacional"
+        features.append({
+            "type": "Feature",
+            "properties": {"name": name, "source": "IGN"},
             "geometry": geom,
         })
     return {"type": "FeatureCollection", "features": features}
@@ -197,10 +236,12 @@ def process_mines(data):
     return {"type": "FeatureCollection", "features": features}
 
 
-def generate_typescript(rivers_fc, outcrops_fc, mines_fc) -> str:
+def generate_typescript(rivers_fc, water_fc, glaciers_fc, boundary_fc, mines_fc) -> str:
     """Generate the TypeScript module content."""
     rivers_json = json.dumps(rivers_fc, indent=2)
-    outcrops_json = json.dumps(outcrops_fc, indent=2)
+    water_json = json.dumps(water_fc, indent=2)
+    glaciers_json = json.dumps(glaciers_fc, indent=2)
+    boundary_json = json.dumps(boundary_fc, indent=2)
     mines_json = json.dumps(mines_fc, indent=2)
 
     return f'''import type {{ FeatureCollection, LineString, Point, Polygon }} from 'geojson'
@@ -210,11 +251,13 @@ def generate_typescript(rivers_fc, outcrops_fc, mines_fc) -> str:
  *
  * Sources:
  *   - Hydrography: IGN Argentina WFS (lineas_de_aguas_continentales)
- *   - Rock outcrops: IGN Argentina WFS (edafologia_afloramiento_rocoso)
+ *   - Water bodies: IGN Argentina WFS (areas_de_aguas_continentales)
+ *   - Glaciers: IGN Argentina WFS (puntos_de_glaciologia_BJ030)
+ *   - International boundary: IGN Argentina WFS (linea_de_limite_FA004)
  *   - Mining points: IGN/SEGEMAR (puntos_de_extraccion_AA010)
  *
  * Generated by scripts/fetch_ign_layers.py
- * Project AOI: San Juan Andes, Argentina (~-30.18, -69.35)
+ * Project AOI: Filo del Sol Cu-Au, Argentina-Chile border (~-28.49, -69.66)
  */
 
 export interface RiverProperties {{
@@ -223,7 +266,18 @@ export interface RiverProperties {{
   source: string
 }}
 
-export interface OutcropProperties {{
+export interface WaterBodyProperties {{
+  name: string
+  kind: 'perennial' | 'intermittent'
+  source: string
+}}
+
+export interface GlacierProperties {{
+  name: string
+  source: string
+}}
+
+export interface BoundaryProperties {{
   name: string
   source: string
 }}
@@ -236,16 +290,24 @@ export interface MineProperties {{
 export const riversGeoJSON: FeatureCollection<LineString, RiverProperties> =
 {rivers_json} as FeatureCollection<LineString, RiverProperties>
 
-export const outcropsGeoJSON: FeatureCollection<Polygon, OutcropProperties> =
-{outcrops_json} as FeatureCollection<Polygon, OutcropProperties>
+export const waterBodiesGeoJSON: FeatureCollection<Polygon, WaterBodyProperties> =
+{water_json} as FeatureCollection<Polygon, WaterBodyProperties>
+
+export const glaciersGeoJSON: FeatureCollection<Point, GlacierProperties> =
+{glaciers_json} as FeatureCollection<Point, GlacierProperties>
+
+export const boundaryGeoJSON: FeatureCollection<LineString, BoundaryProperties> =
+{boundary_json} as FeatureCollection<LineString, BoundaryProperties>
 
 export const minesGeoJSON: FeatureCollection<Point, MineProperties> =
 {mines_json} as FeatureCollection<Point, MineProperties>
 
 /** Layer metadata for UI controls */
 export const GEOLOGY_LAYERS = {{
-  rivers: {{ label: 'Rivers & Streams', color: '#3b82f6' }},
-  outcrops: {{ label: 'Rock Outcrops', color: '#a78bfa' }},
+  rivers: {{ label: 'Rivers', color: '#3b82f6' }},
+  waterBodies: {{ label: 'Lakes', color: '#06b6d4' }},
+  glaciers: {{ label: 'Glaciers', color: '#a5f3fc' }},
+  boundary: {{ label: 'AR-CL Border', color: '#dc2626' }},
   mines: {{ label: 'Mines', color: '#f59e0b' }},
 }} as const
 
@@ -257,25 +319,43 @@ def main():
     print("=== Fetching real layers from IGN Argentina WFS ===\\n")
 
     # 1. Intermittent streams (tight bbox)
-    print("[1/4] Intermittent streams...")
+    print("[1/7] Intermittent streams...")
     intermittent = wfs_get_feature(
         "lineas_de_aguas_continentales_intermitentes", BBOX_TIGHT, max_features=100
     )
 
     # 2. Perennial rivers (wider bbox to capture main drainage)
-    print("[2/4] Perennial rivers...")
+    print("[2/7] Perennial rivers...")
     perennial = wfs_get_feature(
         "lineas_de_aguas_continentales_perenne", BBOX_WIDE, max_features=50
     )
 
-    # 3. Rock outcrops
-    print("[3/4] Rock outcrops...")
-    outcrops_raw = wfs_get_feature(
-        "edafologia_afloramiento_rocoso", BBOX_TIGHT, max_features=20
+    # 3. Water bodies — perennial lakes/lagoons
+    print("[3/7] Perennial water bodies...")
+    wb_perenne = wfs_get_feature(
+        "areas_de_aguas_continentales_perenne", BBOX_WIDE, max_features=20
     )
 
-    # 4. Mining points (wider bbox)
-    print("[4/4] Mining extraction points...")
+    # 4. Water bodies — intermittent lakes/lagoons
+    print("[4/7] Intermittent water bodies...")
+    wb_intermit = wfs_get_feature(
+        "areas_de_aguas_continentales_intermitente", BBOX_WIDE, max_features=20
+    )
+
+    # 5. Glaciers (regional bbox)
+    print("[5/7] Glaciers...")
+    glaciers_raw = wfs_get_feature(
+        "puntos_de_glaciologia_BJ030", BBOX_MEGA, max_features=20
+    )
+
+    # 6. International boundary (wider bbox)
+    print("[6/7] International boundary...")
+    boundary_raw = wfs_get_feature(
+        "linea_de_limite_FA004", BBOX_WIDE, max_features=5
+    )
+
+    # 7. Mining points (wider bbox)
+    print("[7/7] Mining extraction points...")
     mines_raw = wfs_get_feature(
         "puntos_de_extraccion_AA010", BBOX_WIDE, max_features=20
     )
@@ -283,16 +363,20 @@ def main():
     # Process
     print("\\nProcessing and simplifying...")
     rivers_fc = process_rivers(intermittent, perennial)
-    outcrops_fc = process_outcrops(outcrops_raw)
+    water_fc = process_water_bodies(wb_perenne, wb_intermit)
+    glaciers_fc = process_glaciers(glaciers_raw)
+    boundary_fc = process_boundary(boundary_raw)
     mines_fc = process_mines(mines_raw)
 
     print(f"  Rivers: {len(rivers_fc['features'])} features")
-    print(f"  Outcrops: {len(outcrops_fc['features'])} features")
+    print(f"  Water bodies: {len(water_fc['features'])} features")
+    print(f"  Glaciers: {len(glaciers_fc['features'])} features")
+    print(f"  Boundary: {len(boundary_fc['features'])} features")
     print(f"  Mines: {len(mines_fc['features'])} features")
 
     # Count total coordinate points
     total_pts = 0
-    for fc in [rivers_fc, outcrops_fc, mines_fc]:
+    for fc in [rivers_fc, water_fc, glaciers_fc, boundary_fc, mines_fc]:
         for f in fc["features"]:
             geom = f["geometry"]
             if geom["type"] == "LineString":
@@ -304,7 +388,7 @@ def main():
     print(f"  Total coordinate points: {total_pts}")
 
     # Generate TypeScript
-    ts_content = generate_typescript(rivers_fc, outcrops_fc, mines_fc)
+    ts_content = generate_typescript(rivers_fc, water_fc, glaciers_fc, boundary_fc, mines_fc)
     ts_size_kb = len(ts_content.encode()) / 1024
     print(f"\\nOutput size: {ts_size_kb:.1f} KB")
 
