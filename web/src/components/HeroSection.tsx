@@ -7,10 +7,10 @@ export function HeroSection() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
         <div>
           <h2 className="text-xl font-bold text-white">
-            From drillhole to decision — in seconds
+            Filo del Sol — Unlocking a World-Class Cu-Au System
           </h2>
           <p className="text-sm text-slate-400">
-            Click a hole on the map. See grade, geology, and depth profile instantly.
+            High-sulfidation epithermal target at 4,200 m in the Andean Cordillera. Explore grade, geology, and structure in real time.
           </p>
         </div>
         {/* 3 inline capability pills */}

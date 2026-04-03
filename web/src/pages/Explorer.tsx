@@ -7,6 +7,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { HeroSection } from '@/components/HeroSection'
 import { SearchFilter } from '@/components/SearchFilter'
 import { TopDrillholes } from '@/components/TopDrillholes'
+import { ExplorationRadar } from '@/components/ExplorationRadar'
 import { Card, CardContent } from '@/components/ui/Card'
 import type { Drillhole, PeakZone } from '@/types'
 
@@ -88,6 +89,12 @@ export function Explorer() {
             <SearchFilter
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
+            />
+
+            {/* Exploration Radar — project-level intelligence */}
+            <ExplorationRadar
+              drillholes={allDrillholes}
+              onSelectDrillhole={setSelectedDrillhole}
             />
 
             {/* Top Drillholes (Premium Feature) */}
