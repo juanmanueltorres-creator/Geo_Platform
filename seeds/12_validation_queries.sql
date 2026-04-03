@@ -181,7 +181,7 @@ LEFT JOIN mineralization_intervals mi
    AND s.interval && mi.interval
 LEFT JOIN mineralization_types mt
     ON mt.id = mi.mineralization_id
-WHERE dh.hole_id IN ('SJDH-001', 'SJDH-015', 'SJDH-025')
+WHERE dh.hole_id IN ('FSDH-001', 'FSDH-015', 'FSDH-025')
   AND MOD(lower(s.interval)::int, 20) = 0
 ORDER BY dh.hole_id, from_m;
 

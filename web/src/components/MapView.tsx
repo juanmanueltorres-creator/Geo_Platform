@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, WMSTileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { api } from '@/lib/api'
 import type { Drillhole } from '@/types'
@@ -73,6 +73,11 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
     boundary: true,
     mines: true,
   })
+
+  // SEGEMAR WMS geological overlay state
+  const [showGeologyWMS, setShowGeologyWMS] = useState(true)
+  const [showFaultsWMS, setShowFaultsWMS] = useState(true)
+  const [wmsOpacity, setWmsOpacity] = useState(0.55)
 
   const toggleLayer = useCallback((key: GeologyLayerKey) => {
     setVisibleLayers(prev => ({ ...prev, [key]: !prev[key] }))
@@ -168,6 +173,32 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
           </button>
         ))}
       </div>
+
+      {/* SEGEMAR WMS — 1:500K surface geology (border zone map) */}
+      {showGeologyWMS && (
+        <WMSTileLayer
+          url="https://sigam.segemar.gov.ar/geoserver/ows"
+          params={{
+            layers: 'GeoFront500:Mapa_frontera_unidad_geologica_500K',
+            format: 'image/png',
+            transparent: true,
+            version: '1.1.1',
+          }}
+          opacity={wmsOpacity}
+        />
+      )}
+      {showFaultsWMS && (
+        <WMSTileLayer
+          url="https://sigam.segemar.gov.ar/geoserver/ows"
+          params={{
+            layers: 'GeoFront500:Mapa_frontera_fallas_500K',
+            format: 'image/png',
+            transparent: true,
+            version: '1.1.1',
+          }}
+          opacity={Math.min(wmsOpacity + 0.2, 1)}
+        />
+      )}
 
       {drillholes.map(hole => {
         const coords = hole.geometry?.coordinates as [number, number]
@@ -362,10 +393,37 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
           borderRadius: 8, padding: '8px 10px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
           display: 'flex', flexDirection: 'column', gap: 4,
-          minWidth: 130,
+          minWidth: 140,
         }}
       >
-        <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 }}>
+        {/* SEGEMAR WMS geology section */}
+        <span style={{ fontSize: 10, fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: 1 }}>
+          Geology (SEGEMAR)
+        </span>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, color: '#e2e8f0', padding: '2px 0' }}>
+          <input type="checkbox" checked={showGeologyWMS} onChange={() => setShowGeologyWMS(v => !v)} style={{ accentColor: '#d97706', width: 14, height: 14 }} />
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: '#d97706', opacity: 0.8, display: 'inline-block' }} />
+          Surface Units
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, color: '#e2e8f0', padding: '2px 0' }}>
+          <input type="checkbox" checked={showFaultsWMS} onChange={() => setShowFaultsWMS(v => !v)} style={{ accentColor: '#ef4444', width: 14, height: 14 }} />
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: '#ef4444', opacity: 0.8, display: 'inline-block' }} />
+          Faults
+        </label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0' }}>
+          <span style={{ fontSize: 10, color: '#94a3b8', minWidth: 46 }}>Opacity</span>
+          <input
+            type="range" min={0} max={100} value={Math.round(wmsOpacity * 100)}
+            onChange={e => setWmsOpacity(Number(e.target.value) / 100)}
+            style={{ width: 70, height: 4, accentColor: '#d97706' }}
+          />
+          <span style={{ fontSize: 10, color: '#94a3b8', minWidth: 26 }}>{Math.round(wmsOpacity * 100)}%</span>
+        </div>
+
+        {/* Separator */}
+        <div style={{ borderTop: '1px solid rgba(148,163,184,0.3)', margin: '2px 0' }} />
+
+        <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>
           Layers
         </span>
         {(Object.keys(GEOLOGY_LAYERS) as GeologyLayerKey[]).map(key => (
