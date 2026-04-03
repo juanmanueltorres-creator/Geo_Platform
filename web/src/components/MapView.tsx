@@ -1,8 +1,14 @@
-import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet'
+import { useEffect, useState, useCallback } from 'react'
+import { MapContainer, TileLayer, CircleMarker, Popup, GeoJSON, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { api } from '@/lib/api'
 import type { Drillhole } from '@/types'
+import {
+  riversGeoJSON,
+  outcropsGeoJSON,
+  GEOLOGY_LAYERS,
+  type GeologyLayerKey,
+} from '@/data/geology-layers'
 import 'leaflet/dist/leaflet.css'
 
 const TILE_LAYERS = {
@@ -51,6 +57,14 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [tileLayer, setTileLayer] = useState<TileLayerKey>('esri')
+  const [visibleLayers, setVisibleLayers] = useState<Record<GeologyLayerKey, boolean>>({
+    rivers: true,
+    outcrops: true,
+  })
+
+  const toggleLayer = useCallback((key: GeologyLayerKey) => {
+    setVisibleLayers(prev => ({ ...prev, [key]: !prev[key] }))
+  }, [])
 
   useEffect(() => {
     const fetchDrillholes = async () => {
@@ -190,6 +204,92 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
           </CircleMarker>
         )
       })}
+
+      {/* Geological context layers — real data from IGN Argentina */}
+      {visibleLayers.outcrops && (
+        <GeoJSON
+          key="outcrops"
+          data={outcropsGeoJSON}
+          style={() => ({
+            fillColor: '#a78bfa',
+            fillOpacity: 0.15,
+            color: '#7c3aed',
+            weight: 1.5,
+            opacity: 0.5,
+          })}
+          onEachFeature={(feature, layer) => {
+            layer.bindTooltip(
+              `<b>${feature.properties.name}</b><br/>Source: ${feature.properties.source}`,
+              { sticky: true }
+            )
+          }}
+        />
+      )}
+
+      {visibleLayers.rivers && (
+        <GeoJSON
+          key="rivers"
+          data={riversGeoJSON}
+          style={(feature) => {
+            const kind = feature?.properties?.kind
+            return {
+              color: '#3b82f6',
+              weight: kind === 'perennial' ? 2.5 : 1.5,
+              opacity: kind === 'perennial' ? 0.8 : 0.4,
+              dashArray: kind === 'intermittent' ? '4 3' : undefined,
+            }
+          }}
+          onEachFeature={(feature, layer) => {
+            const name = feature.properties.name
+            const kind = feature.properties.kind === 'perennial' ? 'Perennial' : 'Intermittent'
+            layer.bindTooltip(
+              `<b>${name}</b><br/>${kind} — IGN`,
+              { sticky: true }
+            )
+          }}
+        />
+      )}
+
+      {/* Geology layer toggle panel */}
+      <div
+        style={{
+          position: 'absolute', top: 50, right: 10, zIndex: 1000,
+          background: 'rgba(15, 23, 42, 0.92)',
+          borderRadius: 8, padding: '8px 10px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+          display: 'flex', flexDirection: 'column', gap: 4,
+          minWidth: 130,
+        }}
+      >
+        <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 }}>
+          Layers
+        </span>
+        {(Object.keys(GEOLOGY_LAYERS) as GeologyLayerKey[]).map(key => (
+          <label
+            key={key}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              cursor: 'pointer', fontSize: 12, color: '#e2e8f0',
+              padding: '2px 0',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={visibleLayers[key]}
+              onChange={() => toggleLayer(key)}
+              style={{ accentColor: GEOLOGY_LAYERS[key].color, width: 14, height: 14 }}
+            />
+            <span
+              style={{
+                width: 10, height: 10, borderRadius: key === 'outcrops' ? 2 : '50%',
+                background: GEOLOGY_LAYERS[key].color, opacity: 0.8,
+                display: 'inline-block',
+              }}
+            />
+            {GEOLOGY_LAYERS[key].label}
+          </label>
+        ))}
+      </div>
     </MapContainer>
   )
 }
