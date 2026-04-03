@@ -333,6 +333,27 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         />
       )}
 
+      {/* Interaction hint — shown when no drillhole is selected */}
+      {!selectedDrillholeId && drillholes.length > 0 && (
+        <div
+          style={{
+            position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 1000, background: 'rgba(15, 23, 42, 0.88)',
+            borderRadius: 8, padding: '6px 14px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+            display: 'flex', alignItems: 'center', gap: 8,
+            pointerEvents: 'none',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24">
+            <polygon points="12,2 22,12 12,22 2,12" fill="#e11d48" stroke="#fff" strokeWidth="2" />
+          </svg>
+          <span style={{ fontSize: 12, color: '#e2e8f0', fontWeight: 500 }}>
+            Click a diamond marker to inspect drillhole assays & geology
+          </span>
+        </div>
+      )}
+
       {/* Geology layer toggle panel */}
       <div
         style={{

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MousePointerClick, Zap } from 'lucide-react'
+import { MousePointerClick, Zap, Mountain, Hammer, Globe } from 'lucide-react'
 import { MapView } from '@/components/MapView'
 import { DrillholeSummaryCard } from '@/components/DrillholeSummaryCard'
 import { AssayChart } from '@/components/AssayChart'
@@ -42,6 +42,26 @@ export function Explorer() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Map Section */}
           <div className="lg:col-span-2">
+            {/* Zone context — Filo del Sol */}
+            <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg bg-slate-900/70 border border-slate-800 px-4 py-2.5 text-xs text-slate-400">
+              <span className="inline-flex items-center gap-1.5 text-slate-300 font-semibold">
+                <Mountain className="w-3.5 h-3.5 text-amber-400" />
+                Filo del Sol Cu-Au Project
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Globe className="w-3 h-3 text-slate-500" />
+                28.49°S, 69.66°W · San Juan, Argentina
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Hammer className="w-3 h-3 text-slate-500" />
+                High-sulfidation epithermal Cu-Au · 4,100–4,200 m a.s.l.
+              </span>
+              <span className="text-slate-500">·</span>
+              <span className="text-amber-400/80 font-medium">
+                Advanced exploration — 30 diamond drillholes, resource definition stage
+              </span>
+            </div>
+
             <Card className="h-[700px]">
               <MapView 
                 onDrillholeSelect={setSelectedDrillhole}
@@ -49,7 +69,7 @@ export function Explorer() {
                 selectedDrillholeId={selectedDrillhole?.drillhole_id ?? null}
               />
             </Card>
-            
+
             {/* Assay Chart */}
             {selectedDrillhole && (
               <div className="mt-6">
