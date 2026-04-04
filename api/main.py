@@ -11,7 +11,13 @@ import secrets
 import time
 import logging
 from dotenv import load_dotenv
-from weather import get_current_weather, cache_info, clear_cache
+# Import style that works both when running from the `api/` dir (Render: `python -m uvicorn main:app`)
+# and when imported as a package (tests / local `import api.main`). Prefer the local module
+# first, fall back to the package import if needed.
+try:
+    from weather import get_current_weather, cache_info, clear_cache
+except ModuleNotFoundError:
+    from api.weather import get_current_weather, cache_info, clear_cache
 
 # =============================
 # LOGGING SETUP
