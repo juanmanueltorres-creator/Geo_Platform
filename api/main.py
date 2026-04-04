@@ -11,13 +11,21 @@ import secrets
 import time
 import logging
 from dotenv import load_dotenv
-# Import style that works both when running from the `api/` dir (Render: `python -m uvicorn main:app`)
-# and when imported as a package (tests / local `import api.main`). Prefer the local module
-# first, fall back to the package import if needed.
+# LOGGING DE ARRANQUE PARA DEBUG EN RENDER
+print("[GeoPlatform] main.py loaded: __name__=", __name__)
 try:
+    print("[GeoPlatform] Intentando importar weather (relative)")
     from weather import get_current_weather, cache_info, clear_cache
-except ModuleNotFoundError:
-    from api.weather import get_current_weather, cache_info, clear_cache
+    print("[GeoPlatform] Importación relative de weather OK")
+except ModuleNotFoundError as e:
+    print("[GeoPlatform] Falla import relative, error:", e)
+    try:
+        print("[GeoPlatform] Intentando importar weather (absolute)")
+        from api.weather import get_current_weather, cache_info, clear_cache
+        print("[GeoPlatform] Importación absolute de weather OK")
+    except ModuleNotFoundError as e2:
+        print("[GeoPlatform] Falla import absolute, error:", e2)
+        raise
 
 # =============================
 # LOGGING SETUP
