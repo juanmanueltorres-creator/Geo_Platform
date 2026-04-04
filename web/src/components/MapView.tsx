@@ -148,31 +148,31 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
     setVisibleLayers(prev => ({ ...prev, [key]: !prev[key] }))
   }, [])
 
-  useEffect(() => {
-    const fetchDrillholes = async () => {
-      try {
-        setLoading(true)
-        const data = await api.getDrillholeLocations()
-        const holes = data.features.map(feature => ({
-          drillhole_id: feature.properties.hole_id,
-          hole_id: feature.properties.hole_id,
-          drillhole: feature.properties.name,
-          max_depth: feature.properties.max_depth ?? 0,
-          geometry: feature.geometry
-        }))
-        setDrillholes(holes)
-        onDrillholesLoaded?.(holes)
-        setError(null)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error loading map')
-        console.error('Error fetching drillholes:', err)
-      } finally {
-        setLoading(false)
-      }
+  const fetchDrillholes = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await api.getDrillholeLocations()
+      const holes = data.features.map(feature => ({
+        drillhole_id: feature.properties.hole_id,
+        hole_id: feature.properties.hole_id,
+        drillhole: feature.properties.name,
+        max_depth: feature.properties.max_depth ?? 0,
+        geometry: feature.geometry
+      }))
+      setDrillholes(holes)
+      onDrillholesLoaded?.(holes)
+    } catch (err) {
+      setError('Could not reach the server. The API may be starting up.')
+      console.error('Error fetching drillholes:', err)
+    } finally {
+      setLoading(false)
     }
+  }, [onDrillholesLoaded])
 
+  useEffect(() => {
     fetchDrillholes()
-  }, [])
+  }, [fetchDrillholes])
 
   // Fallback center — Filo del Sol project, overridden by FitBounds once data loads
   const defaultCenter = [-28.49, -69.66] as [number, number]
@@ -193,8 +193,15 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   if (error) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-red-50 dark:bg-red-950 rounded-lg">
-        <div className="text-center">
+        <div className="text-center space-y-3">
           <p className="text-red-600 dark:text-red-400 font-semibold">{error}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Free-tier API may take ~30s to wake up.</p>
+          <button
+            onClick={fetchDrillholes}
+            className="px-4 py-2 bg-geo-primary text-white rounded-lg text-sm hover:bg-geo-primary/80 transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     )

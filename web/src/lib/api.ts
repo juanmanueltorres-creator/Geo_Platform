@@ -5,8 +5,26 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://geo-plataform.onrender.
 
 const apiClient = axios.create({
   baseURL: API_URL,
-  timeout: 10000,
+  timeout: 55000,
 })
+
+// Auto-retry on timeout / network error — handles Render free-tier cold start (~30s)
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config as (typeof error.config & { __retryCount?: number })
+    if (!config) return Promise.reject(error)
+    const retryCount = config.__retryCount ?? 0
+    const isRetryable =
+      error.code === 'ECONNABORTED' ||
+      error.code === 'ERR_NETWORK' ||
+      !error.response
+    if (!isRetryable || retryCount >= 2) return Promise.reject(error)
+    config.__retryCount = retryCount + 1
+    await new Promise(resolve => setTimeout(resolve, 1500 * config.__retryCount!))
+    return apiClient(config)
+  }
+)
 
 export const api = {
   // Get all drillhole locations (extended GeoJSON with depth + geometry)
