@@ -21,7 +21,6 @@ export function FieldConditions() {
       })
       .catch((err) => {
         if (!mounted) return
-        console.error('weather fetch error', err)
         setError(err?.message || 'Unable to fetch weather')
       })
       .finally(() => {

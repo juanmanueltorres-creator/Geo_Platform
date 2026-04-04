@@ -20,7 +20,7 @@ export function Explorer() {
   // Warm-up banner state
   const [mapLoading, setMapLoading] = useState(true)
   const [showWarmup, setShowWarmup] = useState(false)
-  const warmupTimer = useRef<NodeJS.Timeout | null>(null)
+  const warmupTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (mapLoading) {
@@ -71,7 +71,12 @@ export function Explorer() {
                 </span>
                 <div className="flex-1">
                   <div className="font-semibold text-amber-200 text-sm tracking-tight flex items-center gap-2">
-                    <span className="animate-pulse"><svg width=16 height=16 viewBox='0 0 24 24' fill='none' stroke='#fbbf24' strokeWidth='2'><circle cx='12' cy='12' r='10' strokeOpacity='.5'/><path d='M12 6v6l4 2' stroke='#fbbf24' strokeLinecap='round'/></svg></span>
+                    <span className="animate-pulse">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10" strokeOpacity=".5" />
+                        <path d="M12 6v6l4 2" stroke="#fbbf24" strokeLinecap="round" />
+                      </svg>
+                    </span>
                     Warming up exploration services...
                   </div>
                   <div className="text-xs text-slate-300/80 mt-0.5">First load may take up to ~60 seconds while the backend wakes up.</div>
