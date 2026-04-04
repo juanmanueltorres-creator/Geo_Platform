@@ -6,6 +6,7 @@ import { AssayChart } from '@/components/AssayChart'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { HeroSection } from '@/components/HeroSection'
 import { SearchFilter } from '@/components/SearchFilter'
+import { FieldConditions } from '@/components/FieldConditions'
 import { TopDrillholes } from '@/components/TopDrillholes'
 import { ExplorationRadar } from '@/components/ExplorationRadar'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -131,6 +132,9 @@ export function Explorer() {
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
             />
+
+            {/* Field Conditions — compact project weather */}
+            <FieldConditions />
 
             {/* Exploration Radar — project-level intelligence */}
             <ExplorationRadar

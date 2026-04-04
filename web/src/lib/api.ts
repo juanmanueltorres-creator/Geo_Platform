@@ -81,4 +81,10 @@ export const api = {
     const response = await apiClient.get(`/drillholes/${drillholeId}/geology-summary`)
     return response.data
   },
+
+  // Project-scoped current weather for the Filo del Sol project
+  getProjectWeatherCurrent: async (): Promise<any> => {
+    const response = await apiClient.get('/project/weather/current')
+    return response.data
+  },
 }

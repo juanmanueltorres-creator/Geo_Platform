@@ -11,6 +11,7 @@ import secrets
 import time
 import logging
 from dotenv import load_dotenv
+from api.weather import get_current_weather, cache_info, clear_cache
 
 # =============================
 # LOGGING SETUP
@@ -247,6 +248,29 @@ def ready():
     finally:
         if conn and db_pool:
             db_pool.putconn(conn)
+
+# =============================
+# WEATHER
+# =============================
+
+@app.get("/project/weather/current")
+def project_weather_current(
+    force_refresh: bool = Query(False, description="Force refresh and ignore cache")
+):
+    """Project-scoped current weather for Filo del Sol.
+
+    - Uses an in-memory TTL cache (10 minutes)
+    - Does NOT accept lat/lon from the frontend (project-scoped)
+    """
+    try:
+        data = get_current_weather(force_refresh=force_refresh)
+        return data
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Weather endpoint error: {e}")
+        raise HTTPException(status_code=503, detail="Weather service unavailable")
+
 
 # =============================
 # DRILLHOLES LIST (with pagination & filtering)
