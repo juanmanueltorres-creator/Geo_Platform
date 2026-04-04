@@ -21,7 +21,13 @@ export function FieldConditions() {
       })
       .catch((err) => {
         if (!mounted) return
-        setError(err?.message || 'Unable to fetch weather')
+        // If backend returned structured 503 (weather_unavailable), show friendly message
+        const resp = err?.response
+        if (resp && resp.data && resp.data.error === 'weather_unavailable') {
+          setError('Weather temporarily unavailable')
+        } else {
+          setError('Unable to fetch weather')
+        }
       })
       .finally(() => {
         if (!mounted) return
@@ -43,7 +49,11 @@ export function FieldConditions() {
           <div>
             <CardTitle>Field Conditions</CardTitle>
             <CardDescription>
-              {weather ? `Updated ${new Date(weather.fetched_at).toLocaleString()}` : 'Filo del Sol'}
+              {weather ? (
+                `${new Date(weather.fetched_at).toLocaleString()}${weather.stale ? ' · Using last known conditions' : ''}`
+              ) : (
+                'Filo del Sol'
+              )}
             </CardDescription>
           </div>
         </div>

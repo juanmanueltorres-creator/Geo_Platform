@@ -4,6 +4,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Optional
 import logging
 import httpx
+from fastapi import HTTPException
 
 logger = logging.getLogger("geoplataform.weather")
 
@@ -182,22 +183,64 @@ def get_current_weather(force_refresh: bool = False) -> Dict[str, Any]:
     raw = cache.get_raw(key)
     now_ts = time.time()
 
+    # If cached and still valid, return immediately (avoid calling upstream)
     if not force_refresh and raw and raw.get("expires_at", 0) > now_ts:
         return raw["value"]
 
+    # Attempt to refresh from provider
     try:
         normalized = fetch_open_meteo_current()
         cache.set(key, normalized, TTL_SECONDS)
         return normalized
-    except Exception as e:
-        logger.warning(f"Failed to refresh weather; error={e}")
-        # return stale if available
+
+    except httpx.HTTPStatusError as http_err:
+        status = None
+        try:
+            status = http_err.response.status_code if http_err.response is not None else None
+        except Exception:
+            status = None
+
+        logger.warning(f"Open-Meteo HTTP error: status={status}")
+
+        # Rate limited by provider — prefer stale cache if available
+        if status == 429:
+            if raw and "value" in raw:
+                stale = raw["value"].copy()
+                stale["stale"] = True
+                stale["source_status"] = "rate_limited"
+                return stale
+            # No cache available — return controlled 503
+            raise HTTPException(status_code=503, detail={
+                "error": "weather_unavailable",
+                "message": "Weather provider rate-limited",
+                "source_status": "rate_limited"
+            })
+
+        # Other upstream HTTP errors
         if raw and "value" in raw:
             stale = raw["value"].copy()
-            stale["_stale"] = True
-            stale["_error"] = str(e)
+            stale["stale"] = True
+            stale["source_status"] = f"upstream_error_{status}"
             return stale
-        raise
+        raise HTTPException(status_code=503, detail={
+            "error": "weather_unavailable",
+            "message": "Upstream weather provider error",
+            "source_status": f"upstream_error_{status}"
+        })
+
+    except Exception as e:
+        logger.warning(f"Open-Meteo fetch failed: {e}")
+        # Network or unexpected errors — prefer stale cache if available
+        if raw and "value" in raw:
+            stale = raw["value"].copy()
+            stale["stale"] = True
+            stale["source_status"] = "unavailable"
+            return stale
+        raise HTTPException(status_code=503, detail={
+            "error": "weather_unavailable",
+            "message": "Weather provider unavailable",
+            "source_status": "unavailable"
+        })
 
 
 def clear_cache():
