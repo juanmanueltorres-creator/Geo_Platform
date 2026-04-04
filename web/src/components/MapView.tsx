@@ -77,26 +77,34 @@ function DynamicTileLayer({ url, attribution, maxZoom }: { url: string; attribut
   return null
 }
 
-/** Simple fullscreen toggle — uses the Fullscreen API on the map container */
-function FullscreenToggle() {
+/** Fullscreen toggle — native Fullscreen API on desktop, CSS fixed positioning fallback on iOS Safari */
+function FullscreenToggle({ onMobileToggle, isMobileFs }: { onMobileToggle: () => void; isMobileFs: boolean }) {
   const map = useMap()
-  const [isFs, setIsFs] = useState(false)
+  const [isNativeFs, setIsNativeFs] = useState(false)
 
   useEffect(() => {
-    const onChange = () => setIsFs(!!document.fullscreenElement)
+    const onChange = () => setIsNativeFs(!!document.fullscreenElement)
     document.addEventListener('fullscreenchange', onChange)
     return () => document.removeEventListener('fullscreenchange', onChange)
   }, [])
 
+  const isFs = document.fullscreenEnabled ? isNativeFs : isMobileFs
+
   const toggle = useCallback(() => {
-    const el = map.getContainer().closest('.leaflet-container') as HTMLElement | null
-    if (!el) return
-    if (!document.fullscreenElement) {
-      el.requestFullscreen().then(() => setTimeout(() => map.invalidateSize(), 200))
+    if (document.fullscreenEnabled) {
+      const el = map.getContainer().closest('.leaflet-container') as HTMLElement | null
+      if (!el) return
+      if (!document.fullscreenElement) {
+        el.requestFullscreen().then(() => setTimeout(() => map.invalidateSize(), 200))
+      } else {
+        document.exitFullscreen().then(() => setTimeout(() => map.invalidateSize(), 200))
+      }
     } else {
-      document.exitFullscreen().then(() => setTimeout(() => map.invalidateSize(), 200))
+      // iOS Safari / mobile fallback: CSS-based pseudo-fullscreen
+      onMobileToggle()
+      setTimeout(() => map.invalidateSize(), 200)
     }
-  }, [map])
+  }, [map, onMobileToggle])
 
   return (
     <button
@@ -147,6 +155,9 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   const toggleLayer = useCallback((key: GeologyLayerKey) => {
     setVisibleLayers(prev => ({ ...prev, [key]: !prev[key] }))
   }, [])
+
+  const [layerPanelOpen, setLayerPanelOpen] = useState(false)
+  const [isMobileFs, setIsMobileFs] = useState(false)
 
   const fetchDrillholes = useCallback(async () => {
     try {
@@ -208,6 +219,10 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   }
 
   return (
+    <div style={isMobileFs
+      ? { position: 'fixed', inset: 0, zIndex: 9999 }
+      : { width: '100%', height: '100%' }
+    }>
     <MapContainer
       center={defaultCenter}
       zoom={12}
@@ -220,7 +235,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         attribution={TILE_LAYERS[tileLayer].attribution}
         maxZoom={TILE_LAYERS[tileLayer].maxZoom}
       />
-      <FullscreenToggle />
+      <FullscreenToggle onMobileToggle={() => setIsMobileFs(v => !v)} isMobileFs={isMobileFs} />
 
       {/* Layer switcher button */}
       <div
@@ -457,74 +472,98 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         </div>
       )}
 
-      {/* Geology layer toggle panel */}
-      <div
-        style={{
-          position: 'absolute', top: 50, right: 10, zIndex: 1000,
-          background: 'rgba(15, 23, 42, 0.92)',
-          borderRadius: 8, padding: '8px 10px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-          display: 'flex', flexDirection: 'column', gap: 4,
-          minWidth: 140,
-        }}
-      >
-        {/* SEGEMAR WMS geology section */}
-        <span style={{ fontSize: 10, fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: 1 }}>
-          Geology (SEGEMAR)
-        </span>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, color: '#e2e8f0', padding: '2px 0' }}>
-          <input type="checkbox" checked={showGeologyWMS} onChange={() => setShowGeologyWMS(v => !v)} style={{ accentColor: '#d97706', width: 14, height: 14 }} />
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: '#d97706', opacity: 0.8, display: 'inline-block' }} />
-          Surface Units
-        </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, color: '#e2e8f0', padding: '2px 0' }}>
-          <input type="checkbox" checked={showFaultsWMS} onChange={() => setShowFaultsWMS(v => !v)} style={{ accentColor: '#ef4444', width: 14, height: 14 }} />
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: '#ef4444', opacity: 0.8, display: 'inline-block' }} />
-          Faults
-        </label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0' }}>
-          <span style={{ fontSize: 10, color: '#94a3b8', minWidth: 46 }}>Opacity</span>
-          <input
-            type="range" min={0} max={100} value={Math.round(wmsOpacity * 100)}
-            onChange={e => setWmsOpacity(Number(e.target.value) / 100)}
-            style={{ width: 70, height: 4, accentColor: '#d97706' }}
-          />
-          <span style={{ fontSize: 10, color: '#94a3b8', minWidth: 26 }}>{Math.round(wmsOpacity * 100)}%</span>
-        </div>
+      {/* Collapsible layer panel */}
+      <div style={{ position: 'absolute', top: 50, right: 10, zIndex: 1000 }}>
+        {/* Toggle button — always visible */}
+        <button
+          onClick={() => setLayerPanelOpen(v => !v)}
+          aria-label={layerPanelOpen ? 'Hide layers' : 'Show layers'}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(148,163,184,0.3)',
+            borderRadius: 6, padding: '5px 9px', cursor: 'pointer',
+            color: '#e2e8f0', fontSize: 11, fontWeight: 600,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+          Layers {layerPanelOpen ? '▲' : '▼'}
+        </button>
 
-        {/* Separator */}
-        <div style={{ borderTop: '1px solid rgba(148,163,184,0.3)', margin: '2px 0' }} />
-
-        <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>
-          Layers
-        </span>
-        {(Object.keys(GEOLOGY_LAYERS) as GeologyLayerKey[]).map(key => (
-          <label
-            key={key}
+        {/* Panel content — collapsible */}
+        {layerPanelOpen && (
+          <div
             style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              cursor: 'pointer', fontSize: 12, color: '#e2e8f0',
-              padding: '2px 0',
+              marginTop: 4,
+              background: 'rgba(15, 23, 42, 0.92)',
+              borderRadius: 8, padding: '8px 10px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+              display: 'flex', flexDirection: 'column', gap: 4,
+              minWidth: 140,
             }}
           >
-            <input
-              type="checkbox"
-              checked={visibleLayers[key]}
-              onChange={() => toggleLayer(key)}
-              style={{ accentColor: GEOLOGY_LAYERS[key].color, width: 14, height: 14 }}
-            />
-            <span
-              style={{
-                width: 10, height: 10,
-                borderRadius: key === 'waterBodies' ? 2 : '50%',
-                background: GEOLOGY_LAYERS[key].color, opacity: 0.8,
-                display: 'inline-block',
-              }}
-            />
-            {GEOLOGY_LAYERS[key].label}
-          </label>
-        ))}
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: 1 }}>
+              Geology (SEGEMAR)
+            </span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, color: '#e2e8f0', padding: '2px 0' }}>
+              <input type="checkbox" checked={showGeologyWMS} onChange={() => setShowGeologyWMS(v => !v)} style={{ accentColor: '#d97706', width: 14, height: 14 }} />
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: '#d97706', opacity: 0.8, display: 'inline-block' }} />
+              Surface Units
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, color: '#e2e8f0', padding: '2px 0' }}>
+              <input type="checkbox" checked={showFaultsWMS} onChange={() => setShowFaultsWMS(v => !v)} style={{ accentColor: '#ef4444', width: 14, height: 14 }} />
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: '#ef4444', opacity: 0.8, display: 'inline-block' }} />
+              Faults
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0' }}>
+              <span style={{ fontSize: 10, color: '#94a3b8', minWidth: 46 }}>Opacity</span>
+              <input
+                type="range" min={0} max={100} value={Math.round(wmsOpacity * 100)}
+                onChange={e => setWmsOpacity(Number(e.target.value) / 100)}
+                style={{ width: 70, height: 4, accentColor: '#d97706' }}
+              />
+              <span style={{ fontSize: 10, color: '#94a3b8', minWidth: 26 }}>{Math.round(wmsOpacity * 100)}%</span>
+            </div>
+
+            <div style={{ borderTop: '1px solid rgba(148,163,184,0.3)', margin: '2px 0' }} />
+
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>
+              Layers
+            </span>
+            {(Object.keys(GEOLOGY_LAYERS) as GeologyLayerKey[]).map(key => (
+              <label
+                key={key}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  cursor: 'pointer', fontSize: 12, color: '#e2e8f0',
+                  padding: '2px 0',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleLayers[key]}
+                  onChange={() => toggleLayer(key)}
+                  style={{ accentColor: GEOLOGY_LAYERS[key].color, width: 14, height: 14 }}
+                />
+                <span
+                  style={{
+                    width: 10, height: 10,
+                    borderRadius: key === 'waterBodies' ? 2 : '50%',
+                    background: GEOLOGY_LAYERS[key].color, opacity: 0.8,
+                    display: 'inline-block',
+                  }}
+                />
+                {GEOLOGY_LAYERS[key].label}
+              </label>
+            ))}
+          </div>
+        )}
       </div>
     </MapContainer>
+    </div>
   )
 }
