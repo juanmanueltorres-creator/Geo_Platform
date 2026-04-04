@@ -11,7 +11,7 @@ import secrets
 import time
 import logging
 from dotenv import load_dotenv
-from api.weather import get_current_weather, cache_info, clear_cache
+from weather import get_current_weather, cache_info, clear_cache
 
 # =============================
 # LOGGING SETUP
