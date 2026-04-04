@@ -183,6 +183,43 @@ def health():
     return {"status": "ok", "version": "2.0"}
 
 
+@app.get("/db-check")
+def db_check():
+    """Diagnostic: verify DB pool and connection without exposing secrets."""
+    dsn = os.getenv("DATABASE_URL", "")
+    has_dsn = bool(dsn)
+    dsn_prefix = dsn[:30] + "..." if len(dsn) > 30 else dsn  # safe preview
+
+    if not has_dsn:
+        return {"pool": "none", "dsn_set": False, "error": "DATABASE_URL not set"}
+
+    if db_pool is None:
+        # Try connecting directly to get the real error
+        try:
+            conn = psycopg2.connect(dsn, connect_timeout=10)
+            cur = conn.cursor()
+            cur.execute("SELECT count(*) FROM drillholes")
+            count = cur.fetchone()[0]
+            cur.close()
+            conn.close()
+            return {"pool": "none_but_direct_ok", "dsn_set": True,
+                    "dsn_prefix": dsn_prefix, "drillholes": count}
+        except Exception as e:
+            return {"pool": "none", "dsn_set": True,
+                    "dsn_prefix": dsn_prefix, "connect_error": str(e)}
+
+    try:
+        conn = db_pool.getconn()
+        cur = conn.cursor()
+        cur.execute("SELECT count(*) FROM drillholes")
+        count = cur.fetchone()[0]
+        cur.close()
+        db_pool.putconn(conn)
+        return {"pool": "ok", "dsn_set": True, "drillholes": count}
+    except Exception as e:
+        return {"pool": "error", "dsn_set": True, "error": str(e)}
+
+
 # =============================
 # READINESS CHECK
 # =============================
