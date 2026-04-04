@@ -132,9 +132,10 @@ interface MapViewProps {
   onDrillholeSelect?: (drillhole: Drillhole) => void
   onDrillholesLoaded?: (drillholes: Drillhole[]) => void
   selectedDrillholeId?: string | null
+  onLoadingChange?: (loading: boolean) => void
 }
 
-export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillholeId }: MapViewProps) {
+export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillholeId, onLoadingChange }: MapViewProps) {
   const [drillholes, setDrillholes] = useState<Drillhole[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -162,6 +163,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   const fetchDrillholes = useCallback(async () => {
     try {
       setLoading(true)
+      onLoadingChange?.(true)
       setError(null)
       const data = await api.getDrillholeLocations()
       const holes = data.features.map(feature => ({
@@ -178,8 +180,9 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       console.error('Error fetching drillholes:', err)
     } finally {
       setLoading(false)
+      onLoadingChange?.(false)
     }
-  }, [onDrillholesLoaded])
+  }, [onDrillholesLoaded, onLoadingChange])
 
   useEffect(() => {
     fetchDrillholes()
