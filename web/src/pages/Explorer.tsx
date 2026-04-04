@@ -11,6 +11,7 @@ import { ExplorationRadar } from '@/components/ExplorationRadar'
 import { Card, CardContent } from '@/components/ui/Card'
 import type { Drillhole, PeakZone } from '@/types'
 
+export function Explorer() {
   const [selectedDrillhole, setSelectedDrillhole] = useState<Drillhole | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [allDrillholes, setAllDrillholes] = useState<Drillhole[]>([])
@@ -177,3 +178,5 @@ import type { Drillhole, PeakZone } from '@/types'
     </div>
   )
 }
+
+export default Explorer;
