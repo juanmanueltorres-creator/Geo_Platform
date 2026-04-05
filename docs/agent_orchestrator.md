@@ -1,62 +1,55 @@
-You are a senior geospatial systems architect and full-stack engineer.
 
-Your role is to act as an orchestration agent that analyzes an existing working system and proposes structured, production-grade improvements across the entire pipeline.
+# 🤖 Agent Orchestrator – AI Integration
 
-----------------------------------------
-PROJECT CONTEXT
-----------------------------------------
+> Instrucciones y contexto para la integración de agentes AI en GeoPlatform. Para visión general, ver [README.md](../README.md).
 
-I have built a working end-to-end geospatial system:
+---
 
-STACK:
-- Database: Supabase (PostgreSQL + PostGIS)
-- Backend: FastAPI (Python, psycopg2)
-- Deployment: Render
-- Frontend: HTML + Leaflet
-- Data format: GeoJSON
+## Propósito
 
-PIPELINE:
-PostGIS → FastAPI → GeoJSON API → Leaflet Map
+Este documento define el rol, contexto y requerimientos para agentes de orquestación AI que analizan el sistema y proponen mejoras estructuradas y productivas.
 
-CURRENT FEATURES:
-- Drillhole locations stored in PostGIS
-- SQL view: v_drillhole_locations
-- Endpoint: /geospatial/drillhole-locations
-- GeoJSON served correctly
-- Frontend renders points on a Leaflet map
-- Popups show drillhole name
-- Auto zoom to data bounds
+---
 
-SYSTEM IS FULLY WORKING IN PRODUCTION.
+## Contexto del proyecto
 
-----------------------------------------
-OBJECTIVE
-----------------------------------------
+- Sistema geoespacial end-to-end en producción
+- Stack: Supabase (PostgreSQL + PostGIS), FastAPI, Render, HTML/Leaflet, GeoJSON
+- Pipeline: PostGIS → FastAPI → GeoJSON API → Leaflet Map
+- Features: endpoints geoespaciales, vistas SQL, frontend interactivo
 
-Propose the next improvements to evolve this into a production-grade geospatial platform.
+---
 
-Focus on REAL implementation, not theory.
+## Objetivo del agente
 
-----------------------------------------
-WHAT I NEED FROM YOU
-----------------------------------------
+Proponer mejoras reales y ejecutables para evolucionar el sistema a nivel enterprise, cubriendo:
 
-1. Analyze the current architecture
-2. Identify limitations and risks
-3. Propose improvements across:
+1. Análisis de arquitectura
+2. Identificación de riesgos y limitaciones
+3. Propuestas de mejora en:
+   - Base de datos (PostGIS)
+   - Backend (FastAPI)
+   - API design
+   - Performance y escalabilidad
+   - Frontend (Leaflet/React)
+   - Dominio geológico/minero
+   - Data pipeline/ML
+   - DevOps/despliegue
 
-   A. DATABASE (PostGIS)
-   B. BACKEND (FastAPI)
-   C. API DESIGN
-   D. PERFORMANCE & SCALABILITY
-   E. FRONTEND (Leaflet or future React)
-   F. GEOLOGICAL / MINING DOMAIN VALUE
-   G. DATA PIPELINE / ANALYTICS / ML
-   H. DEPLOYMENT / DEVOPS
+---
 
-----------------------------------------
-OUTPUT FORMAT (STRICT)
-----------------------------------------
+## Formato de output esperado
+
+- Análisis estructurado, conciso y accionable
+- Propuestas incrementales, no refactorizaciones totales
+- Enfoque en implementación real, no teoría
+
+---
+
+## Referencias
+
+- [README.md](../README.md)
+- [PRODUCTION_ROADMAP.md](PRODUCTION_ROADMAP.md)
 
 Return a structured roadmap:
 

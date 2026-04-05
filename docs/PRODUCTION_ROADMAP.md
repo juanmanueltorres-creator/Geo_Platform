@@ -1,63 +1,96 @@
-# GeoPlatform: Production-Grade Evolution Roadmap
 
-**Status:** Working System in Production  
-**Date:** March 2026  
-**Objective:** Transform into enterprise-scale geospatial mining exploration platform
+# 🛣️ Production Roadmap – GeoPlatform
 
----
-
-## TABLE OF CONTENTS
-
-1. [Architecture Assessment](#architecture-assessment)
-2. [Quick Wins (This Week)](#1-quick-wins-this-week)
-3. [Core Improvements (Next 2 Weeks)](#2-core-improvements-next-2-weeks)
-4. [Advanced Features (4-6 Weeks)](#3-advanced-features-4-6-weeks)
-5. [Architecture Evolution](#4-architecture-evolution)
-6. [Prioritized Action Plan](#5-prioritized-action-plan)
-7. [Immediate Next Steps](#immediate-next-steps)
-8. [Mining-Specific Value Adds](#mining-geology-specific-value-adds)
-9. [Portfolio Value](#portfolio-value)
+> Plan de evolución y mejoras para la plataforma. Para visión general, ver [README.md](../README.md).
 
 ---
 
-## ARCHITECTURE ASSESSMENT
+## Propósito
 
-### What's Working Well ✅
-- Solid PostGIS schema (UUID, constraints, normalized sampling model)
-- Rich geological data model (lithology, alteration, mineralization domains)
-- End-to-end pipeline functional in production
-- Proper separation: DB → API → Frontend
-- Multi-tenant ready schema (`projects` table)
-- Advanced SQL views (compositing engine, ML dataset, intersection analysis)
-
-### Critical Gaps 🔴
-- **API:** Only 2 endpoints, no filtering/pagination/drilling
-- **Backend:** No connection pooling, caching, error handling, logging
-- **Frontend:** Bare-bones Leaflet map, no domain data visualization
-- **Security:** No authentication/authorization
-- **Data Quality:** No validation or quality gates
-- **Geological Exposure:** Geochemistry, alteration, mineralization data unused
-- **Visualization:** Missing cross-sections, depth sections, 3D views
-- **Domain Logic:** No grade estimation, anomaly detection, resource modeling
+Este documento detalla el roadmap de mejoras, quick wins, features avanzados y prioridades para evolucionar GeoPlatform a nivel enterprise.
 
 ---
 
-## 1. QUICK WINS (This Week)
+## Índice
 
-**Time Investment:** ~12 hours  
-**Impact:** 40% improvement in API usability, better frontend UX
+1. Evaluación arquitectónica
+2. Quick wins (esta semana)
+3. Mejoras core (próximas 2 semanas)
+4. Features avanzados (4-6 semanas)
+5. Siguientes pasos
+6. Valor para minería y portfolio
 
-### A. Backend Improvements (2-3 hours)
+---
 
-#### 1.1 Add Connection Pooling
-**Why:** Each API call creates a new connection (slow, inefficient)
+## 1. Evaluación arquitectónica
 
-```python
-# Add to main.py (after imports)
-from psycopg2 import pool
-import os
+### Fortalezas ✅
+- Esquema PostGIS robusto (UUID, constraints, modelo normalizado)
+- Modelo geológico rico (litología, alteración, dominios)
+- Pipeline end-to-end funcional
+- Separación DB → API → Frontend
+- Multi-tenant listo
+- Vistas SQL avanzadas (compositing, ML, intersección)
 
-# Initialize connection pool
+### Gaps críticos 🔴
+- API: pocos endpoints, sin paginación/filtros
+- Backend: sin pooling, logging, manejo de errores
+- Frontend: Leaflet básico, sin dominios
+- Seguridad: sin auth/roles
+- Calidad de datos: sin validación
+- Exposición geológica: datos no usados
+- Visualización: falta cross-section, 3D
+- Lógica de dominio: sin estimación de ley, anomalías
+
+---
+
+## 2. Quick Wins (esta semana)
+
+- Mejorar pooling de conexiones
+- Agregar paginación y filtros básicos
+- Mejorar UX frontend (paneles, feedback)
+
+---
+
+## 3. Mejoras core (próximas 2 semanas)
+
+- Exponer endpoints de assays/litología
+- Visualización de dominios geológicos
+- Logging y manejo de errores
+- Documentar endpoints y parámetros
+
+---
+
+## 4. Features avanzados (4-6 semanas)
+
+- Capas de dominio y toggles en mapa
+- UI drill-down (tabla de assays)
+- Visualización de perfiles de profundidad
+- Heatmap de leyes
+- Cross-section y mobile
+
+---
+
+## 5. Siguientes pasos
+
+1. Expandir endpoints y documentación
+2. Mejorar interactividad frontend
+3. Agregar capa de inteligencia (anomalías, ML)
+
+---
+
+## 6. Valor para minería y portfolio
+
+- Demuestra dominio full-stack y geociencias
+- Arquitectura escalable y profesional
+- Roadmap claro y ejecutable
+
+---
+
+## Referencias
+
+- [README.md](../README.md)
+- [architecture_evolution.md](architecture_evolution.md)
 db_pool = pool.SimpleConnectionPool(
     minconn=2,
     maxconn=10,

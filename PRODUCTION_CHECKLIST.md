@@ -1,62 +1,41 @@
-# GeoPlatform API v2.0 - Production Readiness Checklist
 
-**Date:** March 20, 2026  
-**Status:** READY FOR DEPLOYMENT  
-**API Version:** 2.0  
-**Environment:** Render (FastAPI) + Supabase (PostgreSQL)
+# ✅ Production Readiness Checklist – GeoPlatform API v2.0
+
+> Checklist de validación para despliegue productivo. Para resultados de test y reporte de go-live, ver [DEPLOYMENT_REPORT.md](DEPLOYMENT_REPORT.md).
 
 ---
 
-## Test Results Summary
+## Propósito
 
-### 1. Code Quality Tests
+Este archivo lista los requisitos y validaciones que debe cumplir la API antes de ser considerada lista para producción. Es un snapshot de readiness.
 
-| Test | Result | Details |
-|------|--------|---------|
-| **Python Syntax Validation** | PASS | No syntax errors in main.py |
-| **Module Import** | PASS | All 7 required modules imported successfully |
-| **Function Definitions** | PASS | All 13 critical functions defined and accessible |
-| **Endpoint Registration** | PASS | 13 endpoints registered (7 API + 4 auto docs) |
+---
 
-### 2. API Endpoints Validation
+## Checklist de readiness
 
-| Endpoint | Method | Status | Purpose |
-|----------|--------|--------|---------|
-| `/` | GET | PASS | API overview + available endpoints |
-| `/health` | GET | PASS | Server health check |
-| `/docs` | GET | PASS | Swagger UI documentation |
-| `/redoc` | GET | PASS | ReDoc documentation |
-| `/drillholes` | GET | PASS | List drillholes with pagination |
-| `/drillholes/{id}/assays` | GET | PASS | Multi-element geochemistry |
-| `/drillholes/{id}/lithology` | GET | PASS | Lithological intervals |
-| `/geospatial/drillhole-locations` | GET | PASS | GeoJSON collar locations |
-| `/geospatial/domains` | GET | PASS | Geological domain zones |
-| `/geospatial/drillholes-geojson` | GET | PASS | Extended GeoJSON drillholes |
-| `/debug-db` | GET | PASS | Database connectivity check |
+| Ítem                        | Estado | Detalles                                    |
+|-----------------------------|--------|---------------------------------------------|
+| Python Syntax Validation    | PASS   | Sin errores de sintaxis en main.py           |
+| Module Import               | PASS   | Todos los módulos requeridos importados      |
+| Function Definitions        | PASS   | 13 funciones críticas accesibles             |
+| Endpoint Registration       | PASS   | 13 endpoints (7 API + 4 auto docs)           |
+| HTTP Responses              | PASS   | Todos los endpoints devuelven 200            |
+| JSON Structure              | PASS   | Estructuras de respuesta válidas             |
+| Error Handling              | PASS   | Respuestas de error correctas                |
+| Swagger Docs                | PASS   | Documentación auto-generada accesible        |
+| Connection Pooling          | PASS   | psycopg2.pool (2-10 conexiones)              |
+| Logging                     | PASS   | Requests logueados con timestamp             |
+| Pagination                  | PASS   | LIMIT/OFFSET en drillholes                   |
+| Filtering                   | PASS   | Parámetros: project_id, element, domain, etc.|
+| CORS                        | PASS   | Habilitado para todos los orígenes           |
+| Graceful Shutdown           | PASS   | Limpieza de pool al cerrar app               |
+| Startup Validation          | PASS   | Pool inicializado al arrancar                |
 
-### 3. Functional Tests
+---
 
-| Feature | Result | Notes |
-|---------|--------|-------|
-| **HTTP Responses** | PASS | All endpoints return 200 status |
-| **JSON Structure** | PASS | Response structures valid |
-| **Error Handling** | PASS | Graceful error responses |
-| **Swagger Docs** | PASS | Auto-generated API docs accessible |
-| **Connection Pooling** | PASS | psycopg2.pool (2-10 connections) |
-| **Logging** | PASS | All requests logged with timestamps |
+## Nota
 
-### 4. Production-Ready Features
-
-| Feature | Status | Implementation |
-|---------|--------|-----------------|
-| **Pagination** | PASS | LIMIT/OFFSET on drillholes endpoint |
-| **Filtering** | PASS | Query parameters (project_id, element, domain_type, depth ranges) |
-| **Connection Pool** | PASS | SimpleConnectionPool minconn=2, maxconn=10 |
-| **Logging** | PASS | INFO level + traceback on errors |
-| **Error Handling** | PASS | HTTP 404 for not found, 500 for server errors |
-| **CORS** | PASS | Enabled for all origins (restrict in final prod) |
-| **Graceful Shutdown** | PASS | Pool cleanup on app shutdown |
-| **Startup Validation** | PASS | Pool initialized on startup |
+Este checklist es un snapshot. Para reporte de resultados y contexto, ver [DEPLOYMENT_REPORT.md](DEPLOYMENT_REPORT.md).
 
 ---
 

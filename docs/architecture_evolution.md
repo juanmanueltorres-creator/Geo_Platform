@@ -1,63 +1,80 @@
-## 🔄 Architecture Evolution
 
-This project was intentionally developed in progressive phases, each iteration improving structural integrity, scalability, and professional compliance.
+# 🏗️ Architecture Evolution – GeoPlatform
+
+> Historia y justificación de la evolución arquitectónica del sistema. Para visión general, ver [README.md](../README.md).
 
 ---
 
-### Phase 1 – Relational Exploration Model
+## Propósito
 
-Initial normalized schema focused on early-stage gold exploration.
+Este documento resume las fases clave de evolución arquitectónica, motivaciones y decisiones técnicas que llevaron a la estructura actual de GeoPlatform.
 
-Structure:
-Project  
-└── Drillhole  
-  └── Assay (interval + element + value)
+---
 
-Characteristics:
+## Índice
+
+1. Fase 1 – Modelo relacional inicial
+2. Fase 2 – Modelo espacial
+3. Fase 3 – Plataforma multi-tenant (actual)
+
+---
+
+## 1. Fase 1 – Modelo Relacional de Exploración
+
+**Enfoque:** Esquema normalizado para exploración aurífera inicial.
+
+**Estructura:**
+```
+Project
+└── Drillhole
+    └── Assay (intervalo + elemento + valor)
+```
+**Características:**
 - SERIAL primary keys
-- Interval-based assays
-- CHECK constraints for depth validation
-- Single-organization assumption
+- Ensayos por intervalo
+- CHECK constraints para validación de profundidad
+- Supone una sola organización
 
-Goal:
-Validate relational integrity and analytical query capabilities.
+**Objetivo:** Validar integridad relacional y queries analíticas.
 
-Limitation:
-Did not separate physical samples from analytical results.
-Not designed for multi-tenant environments.
+**Limitación:** No separa muestras físicas de resultados analíticos. No es multi-tenant.
 
 ---
 
-### Phase 2 – Spatial Drillhole Model
+## 2. Fase 2 – Modelo Espacial de Sondajes
 
-Introduction of geospatial capabilities.
+**Enfoque:** Incorporación de capacidades geoespaciales.
 
-Enhancements:
-- PostGIS integration
-- Drillhole collar stored as POINT (EPSG:4326)
-- GiST spatial indexing
-- CRS transformation for metric calculations
+**Mejoras:**
+- Integración PostGIS
+- Collar de sondaje como POINT (EPSG:4326)
+- Índices GiST espaciales
+- Transformación CRS para cálculos métricos
 
-Key Concept:
-Spatial awareness added, but geometry remained coupled to drillhole identity.
+**Concepto clave:** Se agrega conciencia espacial, pero la geometría sigue acoplada a la identidad del sondaje.
 
-Limitation:
-Still lacked separation between sample and assay results.
-No enterprise-level architecture.
+**Limitación:** Sin separación muestra/ensayo. Sin arquitectura enterprise.
 
 ---
 
-### Phase 3 – Enterprise Multi-Tenant Geological Platform (Current)
+## 3. Fase 3 – Plataforma Geológica Multi-Tenant (Actual)
 
-Full architectural redesign before production data ingestion.
+**Rediseño total antes de datos productivos.**
 
-Major Changes:
-- UUID primary keys (distributed-safe)
-- Multi-tenant company structure
-- Separation between:
-  - Drillhole identity
-  - Collar geometry
-  - Survey trajectory
+**Cambios principales:**
+- UUID primary keys (distribución segura)
+- Estructura multi-tenant (compañías)
+- Separación entre:
+  - Identidad de sondaje
+  - Geometría de collar
+  - Trayectoria de survey
+
+---
+
+## Referencias
+
+- [README.md](../README.md)
+- [PRODUCTION_ROADMAP.md](PRODUCTION_ROADMAP.md)
   - Physical Samples (interval material)
   - Assay Results (laboratory analysis)
 - QA/QC-ready design

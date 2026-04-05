@@ -1,62 +1,63 @@
-# ============================================================
-# LEARNING WITH AI
-# ENGINEERING PROCESS LAB
-# ============================================================
+#################################################################
+# 📓 LEARNING WITH AI – Bitácora de Aprendizaje y Proceso
+#################################################################
 
-This repository documents a personal experiment:
+> Registro personal de experimentos, aprendizajes y reflexiones sobre el uso de inteligencia artificial como partner técnico en GeoPlatform. Para visión general, ver [README.md](../README.md).
 
-learning how to build real technical systems while using
-artificial intelligence as a thinking partner.
+---
 
-It is not a product repository.
+## Propósito
 
-It is a process repository.
+Documentar el proceso real de aprendizaje, experimentación, errores, preguntas y evolución arquitectónica usando AI como herramienta de pensamiento, no solo de generación de código.
 
-A place to record ideas, experiments, failures, questions,
-architectural thinking and daily learning routines.
+---
 
-The goal is simple:
+## Contexto
 
-build real engineering skills while documenting the path.
+- Proyecto: GeoPlatform (exploración minera, geociencias, software)
+- AI como asistente técnico, no reemplazo
+- Bitácora personal, pero útil para otros developers, ingenieros en transición o curiosos de workflows AI-humanos
 
-------------------------------------------------------------
+---
 
-WHO THIS IS FOR
+## Índice
 
-This repository exists primarily for myself.
+1. Motivación y objetivo
+2. Público destinatario
+3. Contexto personal
+4. Reflexiones sobre AI y aprendizaje
+5. Experimentos, errores y aprendizajes
 
-But it may also be useful for:
+---
 
-developers learning with AI
+## 1. Motivación y objetivo
 
-engineers transitioning into new technical fields
+Este archivo existe para registrar el proceso real (no solo el resultado final):
+- Confusión
+- Experimentación
+- Debugging
+- Pensamiento arquitectónico
+- Fracasos y entendimiento incremental
 
-people interested in AI-assisted learning workflows
+---
 
-or anyone curious about how technical understanding evolves
-through iteration.
+## 2. Público destinatario
 
-------------------------------------------------------------
+Principalmente para mí, pero también para:
+- Developers aprendiendo con AI
+- Ingenieros en transición
+- Interesados en workflows AI-humanos
+- Curiosos sobre cómo evoluciona la comprensión técnica
 
-PERSONAL CONTEXT
+---
 
-My background is in geology and mineral exploration.
+## 3. Contexto personal
 
-Geology teaches you to think in systems.
+Vengo de geología y exploración minera. Geología enseña a pensar en sistemas: capas, señales, interpretación evolutiva. Software engineering es similar: capas de datos, arquitectura, pipelines, modelos, interfaces.
 
-Layers interact.
-Signals appear in patterns.
-Interpretation evolves as new data appears.
+---
 
-Software engineering feels surprisingly similar.
-
-Instead of rock layers we have:
-
-data layers
-system architecture
-data pipelines
-models
-interfaces
+# ...contenido original de bitácora continúa aquí...
 
 This repository documents the process of learning how to
 navigate that new landscape.

@@ -1,64 +1,100 @@
-# 🚀 GeoPlatform v3.0 - Quick Start Guide
 
-## Backend API Status
+# 🚀 Quick Start Guide – GeoPlatform
 
-✅ **Production API:** `https://geo-plataform.onrender.com`
+> Guía rápida para levantar el sistema en modo desarrollo y producción.
 
-- 9 REST endpoints
+---
+
+## Propósito
+
+Este archivo resume los pasos esenciales para instalar, correr y construir GeoPlatform, tanto backend como frontend. Para detalles completos, ver [README.md](README.md).
+
+---
+
+## 1. Backend API
+
+- **API de producción:** `https://geo-plataform.onrender.com`
 - FastAPI + PostgreSQL (Supabase)
-- New endpoint: `/drillholes/{id}/summary`
+- Endpoints REST principales documentados en `/docs`
 
-## Frontend Setup (React v3.0)
+### Pasos para desarrollo local
 
-### 1️⃣ Install Dependencies
+1. Crear entorno virtual:
+   ```bash
+   python -m venv .venv
+   .\.venv\Scripts\activate
+   ```
+2. Instalar dependencias:
+   ```bash
+   pip install -r api/requirements.txt
+   ```
+3. Iniciar el backend:
+   ```bash
+   uvicorn api.main:app --reload
+   ```
 
-```bash
-cd web
-npm install
-```
+---
 
-### 2️⃣ Start Development Server
+## 2. Frontend (React)
 
-```bash
-npm run dev
-```
+### Pasos para desarrollo
 
-Opens at: **http://localhost:3000**
+1. Instalar dependencias:
+   ```bash
+   cd web
+   npm install
+   ```
+2. Iniciar servidor de desarrollo:
+   ```bash
+   npm run dev
+   ```
+   Abre en: [http://localhost:3000](http://localhost:3000)
 
-### 3️⃣ Build for Production
+### Build para producción
 
 ```bash
 npm run build
-# Output in: web/dist/
+# Output en: web/dist/
 ```
 
-## 🎨 Features Implemented
+---
 
-- ⚛️ **React 18** + TypeScript
-- 🎨 **Shadcn/ui** components (Card, Button, etc)
-- 🗺️ **React-Leaflet** with OpenStreetMap
-- 🌙 **Dark Mode** (toggle in header)
-- 📊 **Summary Statistics** using new `/summary` endpoint
-- 📡 **Type-safe API** integration with Axios
-- 📱 **Responsive Design** (mobile-friendly)
+## 3. Features principales
 
-## 📐 Project Structure
+- React 18 + TypeScript
+- Componentes Shadcn/ui (Card, Button, etc)
+- React-Leaflet + OpenStreetMap
+- Dark Mode
+- Estadísticas vía endpoint `/summary`
+- API type-safe con Axios
+- Responsive/mobile
+
+---
+
+## 4. Estructura del proyecto
 
 ```
 geo_platform/
 ├── api/                # FastAPI backend
-│   └── main.py        # Python API server
-├── web/               # React frontend (NEW!)
+│   └── main.py         # Python API server
+├── web/                # React frontend
 │   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── pages/         # Page layouts
-│   │   ├── context/       # Dark mode state
-│   │   ├── lib/           # API client
-│   │   └── types/         # TypeScript interfaces
+│   │   ├── components/ # React components
+│   │   ├── pages/      # Page layouts
+│   │   ├── context/    # Estado global
+│   │   ├── lib/        # API client
+│   │   └── types/      # Tipos TypeScript
 │   ├── package.json
 │   ├── vite.config.ts
 │   ├── tailwind.config.js
-│   └── index.html
+```
+
+---
+
+## 5. Más información
+
+- [README.md](README.md) – visión general y arquitectura
+- [docs/](docs/) – documentación técnica y roadmap
 ├── database/          # PostgreSQL schema
 └── seeds/             # Data loading scripts
 ```
