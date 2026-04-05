@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Thermometer, Wind, CloudRain, Cloud, Droplet, Sun } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/Card'
 import { api } from '@/lib/api'
-import { msToKmh } from '@/lib/windUtils'
+import { msToKmh, degToCardinal } from '@/lib/windUtils'
 
-type Weather = any
+export type Weather = any
 
 export function FieldConditions({ onWeather }: { onWeather?: (weather: any) => void } = {}) {
   const [weather, setWeather] = useState<Weather | null>(null)
@@ -41,6 +41,10 @@ export function FieldConditions({ onWeather }: { onWeather?: (weather: any) => v
   }, [onWeather])
 
   const cur = weather?.current
+  if (cur) {
+    // TEMP: log current weather for gust field inspection
+    console.log('weather current:', cur)
+  }
 
   const fmt = (v: number | null | undefined, unit = '') =>
     v === null || v === undefined ? '—' : `${Number(v).toFixed(1)}${unit}`
@@ -78,10 +82,22 @@ export function FieldConditions({ onWeather }: { onWeather?: (weather: any) => v
             </div>
 
             <div className="flex items-center gap-2">
-              <Wind className="w-4 h-4 text-sky-400" />
+              <Wind className="w-4 h-4 text-sky-400" style={cur?.wind_dir_deg != null && !isNaN(cur.wind_dir_deg) ? { transform: `rotate(${cur.wind_dir_deg}deg)` } : {}} />
               <div>
                 <div className="text-xs text-slate-400">Wind</div>
-                <div className="font-medium">{msToKmh(cur?.wind_speed_ms)} km/h{cur?.wind_gust_ms != null && !isNaN(cur.wind_gust_ms) ? ` (gust ${msToKmh(cur.wind_gust_ms)})` : ''}</div>
+                <div className="font-medium">
+                  {msToKmh(cur?.wind_speed_ms)} km/h
+                  {(() => {
+                    const dir = cur?.wind_dir_deg ?? cur?.wind_direction_deg;
+                    if (dir != null && !isNaN(dir)) {
+                      return <span style={{ color: '#38bdf8', fontWeight: 600, marginLeft: 8 }}>{degToCardinal(dir)}</span>;
+                    }
+                    return null;
+                  })()}
+                </div>
+                {cur?.wind_gust_ms != null && !isNaN(cur.wind_gust_ms) && (
+                  <div className="text-xs text-slate-400 mt-0.5">Gusts {msToKmh(cur.wind_gust_ms)} km/h</div>
+                )}
               </div>
             </div>
 

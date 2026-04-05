@@ -1,18 +1,23 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { MousePointerClick, Zap, Mountain, Hammer, Globe } from 'lucide-react'
 import { MapView } from '@/components/MapView'
+import type { Weather } from '@/components/FieldConditions'
 import { DrillholeSummaryCard } from '@/components/DrillholeSummaryCard'
 import { AssayChart } from '@/components/AssayChart'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { HeroSection } from '@/components/HeroSection'
 import { SearchFilter } from '@/components/SearchFilter'
 import { FieldConditions } from '@/components/FieldConditions'
+
 import { TopDrillholes } from '@/components/TopDrillholes'
 import { ExplorationRadar } from '@/components/ExplorationRadar'
 import { Card, CardContent } from '@/components/ui/Card'
 import type { Drillhole, PeakZone } from '@/types'
 
 export function Explorer() {
+  const [weather, setWeather] = useState<Weather | null>(null)
+  // Weather handler for FieldConditions
+  const handleWeather = useCallback((w: Weather | null) => setWeather(w), [])
   const [selectedDrillhole, setSelectedDrillhole] = useState<Drillhole | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [allDrillholes, setAllDrillholes] = useState<Drillhole[]>([])
@@ -115,6 +120,7 @@ export function Explorer() {
                 onDrillholesLoaded={setAllDrillholes}
                 selectedDrillholeId={selectedDrillhole?.drillhole_id ?? null}
                 onLoadingChange={setMapLoading}
+                weather={(() => { console.log('[Explorer] passing weather to MapView:', weather); return weather })()}
               />
             </Card>
 
@@ -139,7 +145,7 @@ export function Explorer() {
             />
 
             {/* Field Conditions — compact project weather */}
-            <FieldConditions />
+            <FieldConditions onWeather={handleWeather} />
 
             {/* Exploration Radar — project-level intelligence */}
             <ExplorationRadar

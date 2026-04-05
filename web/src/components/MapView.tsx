@@ -4,6 +4,8 @@ import L from 'leaflet'
 import { LeafletScaleControl } from './LeafletScaleControl'
 import { api } from '@/lib/api'
 import type { Drillhole } from '@/types'
+import type { Weather } from './FieldConditions'
+// import { WindOverlay } from './WindOverlay'
 import {
   riversGeoJSON,
   waterBodiesGeoJSON,
@@ -134,9 +136,10 @@ interface MapViewProps {
   onDrillholesLoaded?: (drillholes: Drillhole[]) => void
   selectedDrillholeId?: string | null
   onLoadingChange?: (loading: boolean) => void
+  weather?: Weather | null
 }
 
-export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillholeId, onLoadingChange }: MapViewProps) {
+export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillholeId, onLoadingChange, weather }: MapViewProps) {
   const [drillholes, setDrillholes] = useState<Drillhole[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -222,11 +225,13 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
     )
   }
 
+  console.log('[MapView] received weather prop:', weather);
   return (
     <div style={isMobileFs
       ? { position: 'fixed', inset: 0, zIndex: 9999 }
       : { width: '100%', height: '100%' }
     }>
+      {/* Wind overlay removed for cleaner UI */}
     <MapContainer
       center={defaultCenter}
       zoom={12}
