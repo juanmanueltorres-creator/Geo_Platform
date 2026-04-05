@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { MapContainer, WMSTileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet'
 import L from 'leaflet'
+import { LeafletScaleControl } from './LeafletScaleControl'
 import { api } from '@/lib/api'
 import type { Drillhole } from '@/types'
 import {
@@ -238,6 +239,8 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         attribution={TILE_LAYERS[tileLayer].attribution}
         maxZoom={TILE_LAYERS[tileLayer].maxZoom}
       />
+      {/* Leaflet metric scale control (bottom-right, unobtrusive) */}
+      <LeafletScaleControl />
       <FullscreenToggle onMobileToggle={() => setIsMobileFs(v => !v)} isMobileFs={isMobileFs} />
 
       {/* Layer switcher button */}
