@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { Thermometer, Wind, CloudRain, Cloud, Droplet, Sun } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/Card'
 import { api } from '@/lib/api'
+import { msToKmh } from '@/lib/windUtils'
 
 type Weather = any
 
-export function FieldConditions() {
+export function FieldConditions({ onWeather }: { onWeather?: (weather: any) => void } = {}) {
   const [weather, setWeather] = useState<Weather | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -13,11 +14,13 @@ export function FieldConditions() {
   useEffect(() => {
     let mounted = true
     setLoading(true)
+    console.log("[weather] fetching current weather", new Date().toISOString());
     api.getProjectWeatherCurrent()
       .then((d) => {
         if (!mounted) return
         setWeather(d)
         setError(null)
+        if (onWeather) onWeather(d)
       })
       .catch((err) => {
         if (!mounted) return
@@ -28,14 +31,14 @@ export function FieldConditions() {
         } else {
           setError('Unable to fetch weather')
         }
+        if (onWeather) onWeather(null)
       })
       .finally(() => {
         if (!mounted) return
         setLoading(false)
       })
-
     return () => { mounted = false }
-  }, [])
+  }, [onWeather])
 
   const cur = weather?.current
 
@@ -78,7 +81,7 @@ export function FieldConditions() {
               <Wind className="w-4 h-4 text-sky-400" />
               <div>
                 <div className="text-xs text-slate-400">Wind</div>
-                <div className="font-medium">{fmt(cur?.wind_speed_ms, ' m/s')}</div>
+                <div className="font-medium">{msToKmh(cur?.wind_speed_ms)} km/h{cur?.wind_gust_ms != null && !isNaN(cur.wind_gust_ms) ? ` (gust ${msToKmh(cur.wind_gust_ms)})` : ''}</div>
               </div>
             </div>
 
