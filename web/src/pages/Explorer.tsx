@@ -1,3 +1,4 @@
+import { DrillholeSummaryCard } from '@/components/DrillholeSummaryCard'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Zap, Globe } from 'lucide-react'
 import { MapView } from '@/components/MapView'
@@ -127,7 +128,8 @@ export function Explorer() {
             )}
 
             {/* Map Section — visually dominant */}
-            <Card className="h-[800px] mt-2">
+
+            <div className="relative h-[800px] mt-2">
               <MapView
                 onDrillholeSelect={setSelectedDrillhole}
                 onDrillholesLoaded={setAllDrillholes}
@@ -137,23 +139,32 @@ export function Explorer() {
                 project={selectedProject}
                 projects={projects}
                 onProjectSelect={setSelectedProject}
+                onWeather={handleWeather}
               />
-            </Card>
+            </div>
 
-            {/* Assay Chart */}
+            {/* Drillhole Analysis Panel and Assay Chart */}
             {selectedDrillhole && (
-              <div className="mt-6">
-                <AssayChart 
-                  drillholeId={selectedDrillhole.drillhole_id}
-                  holeName={selectedDrillhole.drillhole}
-                />
-              </div>
+              <>
+                <div className="mt-6">
+                  <DrillholeSummaryCard
+                    drillholeId={selectedDrillhole.drillhole_id}
+                    holeName={selectedDrillhole.drillhole}
+                    maxDepth={selectedDrillhole.max_depth}
+                  />
+                </div>
+                <div className="mt-4">
+                  <AssayChart 
+                    drillholeId={selectedDrillhole.drillhole_id}
+                    holeName={selectedDrillhole.drillhole}
+                  />
+                </div>
+              </>
             )}
           </div>
 
-          {/* Sidebar: only FieldConditions, ExplorationRadar, TopDrillholes */}
+          {/* Sidebar: ExplorationRadar, TopDrillholes */}
           <div className="space-y-8">
-            <FieldConditions project={selectedProject} onWeather={handleWeather} />
             <ExplorationRadar
               drillholes={allDrillholes}
               onSelectDrillhole={setSelectedDrillhole}

@@ -120,8 +120,8 @@ export function AssayChart({ drillholeId, holeName, onPeakComputed }: AssayChart
           Depth profile: <span className="text-amber-400">Au (ppm)</span>{hasCu ? <> + <span className="text-cyan-400">Cu (%)</span></> : ''}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={500}>
+      <CardContent className="pt-4 pb-2">
+        <ResponsiveContainer width="100%" height={340}>
           <ComposedChart
             layout="vertical"
             data={data}
