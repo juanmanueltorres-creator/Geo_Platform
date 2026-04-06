@@ -12,12 +12,15 @@ import { FieldConditions } from '@/components/FieldConditions'
 import { TopDrillholes } from '@/components/TopDrillholes'
 import { ExplorationRadar } from '@/components/ExplorationRadar'
 import { Card, CardContent } from '@/components/ui/Card'
+import { ProjectOverview } from '@/components/ProjectOverview'
 import type { Drillhole, PeakZone } from '@/types'
 
 export function Explorer() {
   const [weather, setWeather] = useState<Weather | null>(null)
   // Weather handler for FieldConditions
   const handleWeather = useCallback((w: Weather | null) => setWeather(w), [])
+  const [projects, setProjects] = useState<any[]>([])
+  const [selectedProject, setSelectedProject] = useState<any | null>(null)
   const [selectedDrillhole, setSelectedDrillhole] = useState<Drillhole | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [allDrillholes, setAllDrillholes] = useState<Drillhole[]>([])
@@ -38,11 +41,29 @@ export function Explorer() {
     return () => { if (warmupTimer.current) clearTimeout(warmupTimer.current) }
   }, [mapLoading])
 
+  // Fetch projects list and set default to Filo del Sol
+  useEffect(() => {
+    let mounted = true
+    import('@/lib/api').then(({ api }) => {
+      api.getProjects()
+        .then((p: any[]) => {
+          if (!mounted) return
+          setProjects(p)
+          const filo = p.find(x => x.slug === 'filo-del-sol') || p[0] || null
+          setSelectedProject(filo)
+        })
+        .catch((err: any) => {
+          console.error('Failed to fetch projects', err)
+        })
+    }).catch((e) => console.error('Dynamic import failed', e))
+    return () => { mounted = false }
+  }, [])
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-950 dark:text-slate-50">
       {/* Header */}
       <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
@@ -52,7 +73,22 @@ export function Explorer() {
               <p className="text-xs text-slate-500">Mineral Exploration Dashboard</p>
             </div>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-3">
+            <select
+              className="text-sm rounded border px-2 py-1 bg-white dark:bg-slate-900"
+              value={selectedProject?.slug ?? ''}
+              onChange={(e) => {
+                const slug = e.target.value
+                const p = projects.find(pr => pr.slug === slug) || null
+                setSelectedProject(p)
+              }}
+            >
+              {projects.map(p => (
+                <option key={p.slug} value={p.slug}>{p.name}</option>
+              ))}
+            </select>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
@@ -115,12 +151,15 @@ export function Explorer() {
             </div>
 
             <Card className="h-[700px]">
-              <MapView 
+              <MapView
                 onDrillholeSelect={setSelectedDrillhole}
                 onDrillholesLoaded={setAllDrillholes}
                 selectedDrillholeId={selectedDrillhole?.drillhole_id ?? null}
                 onLoadingChange={setMapLoading}
                 weather={(() => { console.log('[Explorer] passing weather to MapView:', weather); return weather })()}
+                project={selectedProject}
+                projects={projects}
+                onProjectSelect={setSelectedProject}
               />
             </Card>
 
@@ -138,6 +177,9 @@ export function Explorer() {
 
           {/* Sidebar */}
           <div className="space-y-4">
+            {/* Project Overview (new enriched section) */}
+            <ProjectOverview project={selectedProject} />
+
             {/* Search & Filter */}
             <SearchFilter
               searchTerm={searchTerm}
@@ -145,7 +187,7 @@ export function Explorer() {
             />
 
             {/* Field Conditions — compact project weather */}
-            <FieldConditions onWeather={handleWeather} />
+            <FieldConditions project={selectedProject} onWeather={handleWeather} />
 
             {/* Exploration Radar — project-level intelligence */}
             <ExplorationRadar
