@@ -1,19 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { MousePointerClick, Zap, Mountain, Hammer, Globe } from 'lucide-react'
+import { Zap, Globe } from 'lucide-react'
 import { MapView } from '@/components/MapView'
 import type { Weather } from '@/components/FieldConditions'
-import { DrillholeSummaryCard } from '@/components/DrillholeSummaryCard'
 import { AssayChart } from '@/components/AssayChart'
 import { ThemeToggle } from '@/components/ThemeToggle'
-import { HeroSection } from '@/components/HeroSection'
-import { SearchFilter } from '@/components/SearchFilter'
 import { FieldConditions } from '@/components/FieldConditions'
 
 import { TopDrillholes } from '@/components/TopDrillholes'
 import { ExplorationRadar } from '@/components/ExplorationRadar'
-import { Card, CardContent } from '@/components/ui/Card'
+import { Card } from '@/components/ui/Card'
 import { ProjectOverview } from '@/components/ProjectOverview'
-import type { Drillhole, PeakZone } from '@/types'
+import type { Drillhole } from '@/types'
 
 export function Explorer() {
   const [weather, setWeather] = useState<Weather | null>(null)
@@ -22,9 +19,7 @@ export function Explorer() {
   const [projects, setProjects] = useState<any[]>([])
   const [selectedProject, setSelectedProject] = useState<any | null>(null)
   const [selectedDrillhole, setSelectedDrillhole] = useState<Drillhole | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
   const [allDrillholes, setAllDrillholes] = useState<Drillhole[]>([])
-  const [peakZone, setPeakZone] = useState<PeakZone | null>(null)
   // Warm-up banner state
   const [mapLoading, setMapLoading] = useState(true)
   const [showWarmup, setShowWarmup] = useState(false)
@@ -94,12 +89,13 @@ export function Explorer() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-        {/* Hero Section */}
-        <HeroSection />
+        {/* Hero Section removed: now dynamic ProjectOverview is the main header */}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Map Section */}
-          <div className="lg:col-span-2">
+          {/* Main Section: ProjectOverview + Map */}
+          <div className="lg:col-span-2 flex flex-col">
+            {/* Project Overview as contextual header */}
+            <ProjectOverview project={selectedProject} />
 
             {/* Warm-up Banner */}
             {showWarmup && (
@@ -130,27 +126,8 @@ export function Explorer() {
               </div>
             )}
 
-            {/* Zone context — Filo del Sol */}
-            <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg bg-slate-900/70 border border-slate-800 px-4 py-2.5 text-xs text-slate-400">
-              <span className="inline-flex items-center gap-1.5 text-slate-300 font-semibold">
-                <Mountain className="w-3.5 h-3.5 text-amber-400" />
-                Filo del Sol Cu-Au Project
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Globe className="w-3 h-3 text-slate-500" />
-                28.49°S, 69.66°W · San Juan, Argentina
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Hammer className="w-3 h-3 text-slate-500" />
-                High-sulfidation epithermal Cu-Au · 4,100–4,200 m a.s.l.
-              </span>
-              <span className="text-slate-500">·</span>
-              <span className="text-amber-400/80 font-medium">
-                Advanced exploration — 30 diamond drillholes, resource definition stage
-              </span>
-            </div>
-
-            <Card className="h-[700px]">
+            {/* Map Section — visually dominant */}
+            <Card className="h-[800px] mt-2">
               <MapView
                 onDrillholeSelect={setSelectedDrillhole}
                 onDrillholesLoaded={setAllDrillholes}
@@ -169,59 +146,23 @@ export function Explorer() {
                 <AssayChart 
                   drillholeId={selectedDrillhole.drillhole_id}
                   holeName={selectedDrillhole.drillhole}
-                  onPeakComputed={setPeakZone}
                 />
               </div>
             )}
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-4">
-            {/* Project Overview (new enriched section) */}
-            <ProjectOverview project={selectedProject} />
-
-            {/* Search & Filter */}
-            <SearchFilter
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-            />
-
-            {/* Field Conditions — compact project weather */}
+          {/* Sidebar: only FieldConditions, ExplorationRadar, TopDrillholes */}
+          <div className="space-y-8">
             <FieldConditions project={selectedProject} onWeather={handleWeather} />
-
-            {/* Exploration Radar — project-level intelligence */}
             <ExplorationRadar
               drillholes={allDrillholes}
               onSelectDrillhole={setSelectedDrillhole}
             />
-
-            {/* Top Drillholes (Premium Feature) */}
             <TopDrillholes
               drillholes={allDrillholes}
               onSelectDrillhole={setSelectedDrillhole}
               selectedDrillholeId={selectedDrillhole?.drillhole_id ?? null}
-              searchTerm={searchTerm}
             />
-
-            {/* Selected Drillhole Summary */}
-            {selectedDrillhole ? (
-              <DrillholeSummaryCard
-                drillholeId={selectedDrillhole.drillhole_id}
-                holeName={selectedDrillhole.drillhole}
-                maxDepth={selectedDrillhole.max_depth}
-                peakZone={peakZone}
-              />
-            ) : (
-              <Card className="border-dashed border-slate-700">
-                <CardContent className="py-10 text-center space-y-3">
-                  <MousePointerClick className="w-8 h-8 text-slate-600 mx-auto" />
-                  <p className="text-sm font-medium text-slate-400">No drillhole selected</p>
-                  <p className="text-xs text-slate-600 max-w-[200px] mx-auto leading-relaxed">
-                    Click a marker on the map or select from the ranked list above to see the analysis panel.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </main>
