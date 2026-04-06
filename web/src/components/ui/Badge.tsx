@@ -1,11 +1,16 @@
 import React from 'react';
 
-export function Badge({ children, color = 'amber', className = '' }: { children: React.ReactNode, color?: string, className?: string }) {
-  const colorClass = color === 'amber'
-    ? 'bg-amber-600/80 text-white border-amber-400/60'
-    : 'bg-slate-700 text-white border-slate-500/60';
+export function Badge({ children, color = 'amber', className = '', style = {} }: { children: React.ReactNode, color?: string, className?: string, style?: React.CSSProperties }) {
+  let colorClass = '';
+  if (color === 'amber') {
+    colorClass = 'bg-amber-600/80 text-white border-amber-400/60';
+  } else if (color === 'amber-soft') {
+    colorClass = 'bg-amber-200/40 text-amber-900 border-amber-300/40';
+  } else {
+    colorClass = 'bg-slate-700 text-white border-slate-500/60';
+  }
   return (
-    <span className={`inline-block rounded px-2 py-0.5 border font-semibold ${colorClass} ${className}`}>
+    <span className={`inline-block rounded px-2 py-0.5 border font-semibold ${colorClass} ${className}`} style={style}>
       {children}
     </span>
   );

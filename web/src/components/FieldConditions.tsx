@@ -49,24 +49,24 @@ export function FieldConditions({ project, onWeather }: { project?: any; onWeath
     v === null || v === undefined ? '—' : `${Number(v).toFixed(1)}${unit}`
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="bg-slate-900/70 border border-slate-800 shadow-none p-3">
+      <CardHeader className="pb-2 px-2">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Field Conditions</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-base font-semibold text-slate-200 mb-0.5">Field Conditions</CardTitle>
+            <CardDescription className="text-xs text-slate-400">
               <div>
                 {project ? (
                   <>
-                    <span className="font-semibold text-geo-primary">{project.name}</span>
-                    <span className="ml-2 text-xs text-slate-400">{project.lat.toFixed(5)}, {project.lon.toFixed(5)}</span>
+                    <span className="font-medium text-slate-300">{project.name}</span>
+                    <span className="ml-2 text-xs text-slate-500">{project.lat?.toFixed ? project.lat.toFixed(4) : project.lat}, {project.lon?.toFixed ? project.lon.toFixed(4) : project.lon}</span>
                   </>
                 ) : (
                   <>No project selected</>
                 )}
                 <br />
                 {weather && (
-                  <span className="text-xs text-slate-400">{new Date(weather.fetched_at).toLocaleString()}{weather.stale ? ' · Using last known conditions' : ''}</span>
+                  <span className="text-xs text-slate-500">{new Date(weather.fetched_at).toLocaleString()}{weather.stale ? ' · Using last known conditions' : ''}</span>
                 )}
               </div>
             </CardDescription>
@@ -74,26 +74,26 @@ export function FieldConditions({ project, onWeather }: { project?: any; onWeath
         </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="pt-1 pb-2 px-2">
         {loading ? (
-          <div className="text-sm text-slate-400">Loading…</div>
+          <div className="text-xs text-slate-400">Loading…</div>
         ) : error ? (
-          <div className="text-sm text-rose-400">{error}</div>
+          <div className="text-xs text-rose-400">{error}</div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2">
-              <Thermometer className="w-4 h-4 text-amber-400" />
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-center gap-1.5">
+              <Thermometer className="w-3.5 h-3.5 text-amber-400" />
               <div>
-                <div className="text-xs text-slate-400">Temperature</div>
-                <div className="font-medium">{fmt(cur?.temperature_c, ' °C')}</div>
+                <div className="text-[11px] text-slate-400">Temperature</div>
+                <div className="font-medium text-slate-200">{fmt(cur?.temperature_c, ' °C')}</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Wind className="w-4 h-4 text-sky-400" style={cur?.wind_dir_deg != null && !isNaN(cur.wind_dir_deg) ? { transform: `rotate(${cur.wind_dir_deg}deg)` } : {}} />
+            <div className="flex items-center gap-1.5">
+              <Wind className="w-3.5 h-3.5 text-sky-400" style={cur?.wind_dir_deg != null && !isNaN(cur.wind_dir_deg) ? { transform: `rotate(${cur.wind_dir_deg}deg)` } : {}} />
               <div>
-                <div className="text-xs text-slate-400">Wind</div>
-                <div className="font-medium">
+                <div className="text-[11px] text-slate-400">Wind</div>
+                <div className="font-medium text-slate-200">
                   {msToKmh(cur?.wind_speed_ms)} km/h
                   {(() => {
                     const dir = cur?.wind_dir_deg ?? cur?.wind_direction_deg;
@@ -104,44 +104,44 @@ export function FieldConditions({ project, onWeather }: { project?: any; onWeath
                   })()}
                 </div>
                 {cur?.wind_gust_ms != null && !isNaN(cur.wind_gust_ms) && (
-                  <div className="text-xs text-slate-400 mt-0.5">Gusts {msToKmh(cur.wind_gust_ms)} km/h</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">Gusts {msToKmh(cur.wind_gust_ms)} km/h</div>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Cloud className="w-4 h-4 text-slate-500" />
+            <div className="flex items-center gap-1.5">
+              <Cloud className="w-3.5 h-3.5 text-slate-500" />
               <div>
-                <div className="text-xs text-slate-400">Cloud Cover</div>
-                <div className="font-medium">{cur?.cloud_cover_percent ?? '—'}%</div>
+                <div className="text-[11px] text-slate-400">Cloud Cover</div>
+                <div className="font-medium text-slate-200">{cur?.cloud_cover_percent ?? '—'}%</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Droplet className="w-4 h-4 text-blue-400" />
+            <div className="flex items-center gap-1.5">
+              <Droplet className="w-3.5 h-3.5 text-blue-400" />
               <div>
-                <div className="text-xs text-slate-400">Humidity</div>
-                <div className="font-medium">{cur?.humidity_percent ?? '—'}%</div>
+                <div className="text-[11px] text-slate-400">Humidity</div>
+                <div className="font-medium text-slate-200">{cur?.humidity_percent ?? '—'}%</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <CloudRain className="w-4 h-4 text-emerald-400" />
+            <div className="flex items-center gap-1.5">
+              <CloudRain className="w-3.5 h-3.5 text-emerald-400" />
               <div>
-                <div className="text-xs text-slate-400">Precipitation</div>
-                <div className="font-medium">{fmt(cur?.precipitation_mm, ' mm')}</div>
+                <div className="text-[11px] text-slate-400">Precipitation</div>
+                <div className="font-medium text-slate-200">{fmt(cur?.precipitation_mm, ' mm')}</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Sun className="w-4 h-4 text-amber-300" />
+            <div className="flex items-center gap-1.5">
+              <Sun className="w-3.5 h-3.5 text-amber-300" />
               <div>
-                <div className="text-xs text-slate-400">Sun</div>
-                <div className="font-medium">{cur?.sunrise ? new Date(cur.sunrise).toLocaleTimeString() + ' / ' + new Date(cur.sunset).toLocaleTimeString() : '—'}</div>
+                <div className="text-[11px] text-slate-400">Sun</div>
+                <div className="font-medium text-slate-200">{cur?.sunrise ? new Date(cur.sunrise).toLocaleTimeString() + ' / ' + new Date(cur.sunset).toLocaleTimeString() : '—'}</div>
               </div>
             </div>
 
-            <div className="col-span-2 text-xs text-slate-400 mt-2">Local time: {cur?.time ?? '—'}</div>
+            <div className="col-span-2 text-[11px] text-slate-500 mt-1">Local time: {cur?.time ?? '—'}</div>
           </div>
         )}
       </CardContent>
