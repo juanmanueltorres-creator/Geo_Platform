@@ -5,11 +5,11 @@ import { MapView } from '@/components/MapView'
 import type { Weather } from '@/components/FieldConditions'
 import { AssayChart } from '@/components/AssayChart'
 import { ThemeToggle } from '@/components/ThemeToggle'
-import { FieldConditions } from '@/components/FieldConditions'
+
 
 import { TopDrillholes } from '@/components/TopDrillholes'
 import { ExplorationRadar } from '@/components/ExplorationRadar'
-import { Card } from '@/components/ui/Card'
+
 import { ProjectOverview } from '@/components/ProjectOverview'
 import type { Drillhole } from '@/types'
 

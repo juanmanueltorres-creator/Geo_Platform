@@ -179,6 +179,7 @@ interface MapViewProps {
   project?: Project | null
   projects?: Project[]
   onProjectSelect?: (project: Project) => void
+  onWeather?: (w: any) => void
 }
 
 export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillholeId, onLoadingChange, weather, project, projects = [], onProjectSelect, onWeather }: MapViewProps) {

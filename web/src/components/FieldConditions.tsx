@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Thermometer, Wind, CloudRain, Cloud, Droplet, Sun } from 'lucide-react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/Card'
+import { Card, CardHeader, CardTitle, CardContent } from './ui/Card'
 import { api } from '@/lib/api'
 import { msToKmh, degToCardinal } from '@/lib/windUtils'
 
