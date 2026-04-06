@@ -10,6 +10,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { MapContainer, WMSTileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { LeafletScaleControl } from './LeafletScaleControl'
+import { FieldConditions } from './FieldConditions'
 import { api } from '@/lib/api'
 import type { Drillhole } from '@/types'
 import type { Weather } from './FieldConditions'
@@ -180,7 +181,7 @@ interface MapViewProps {
   onProjectSelect?: (project: Project) => void
 }
 
-export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillholeId, onLoadingChange, weather, project, projects = [], onProjectSelect }: MapViewProps) {
+export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillholeId, onLoadingChange, weather, project, projects = [], onProjectSelect, onWeather }: MapViewProps) {
   const [drillholes, setDrillholes] = useState<Drillhole[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -331,15 +332,28 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   return (
     <div style={isMobileFs
       ? { position: 'fixed', inset: 0, zIndex: 9999 }
-      : { width: '100%', height: '100%' }
+      : { width: '100%', height: '100%', position: 'relative' }
     }>
-      {/* Wind overlay removed for cleaner UI */}
     <MapContainer
       center={projectCenter}
       zoom={projectZoom}
-      style={{ width: '100%', height: '100%', borderRadius: '0.5rem' }}
+      style={{ width: '100%', height: '100%', borderRadius: '0.5rem', position: 'relative' }}
       className="z-0"
     >
+      {/* FieldConditions overlay — now inside the Leaflet map container for fullscreen compatibility */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 74, // slightly lower for more comfortable spacing below zoom controls
+          left: 12,
+          zIndex: 1200,
+          width: 170,
+          maxWidth: '90%',
+          pointerEvents: 'auto',
+        }}
+      >
+        <FieldConditions project={project} onWeather={onWeather} />
+      </div>
       <MapInstanceBridge mapRef={mapRef} />
       <FitBounds drillholes={drillholes} />
       <Recenter center={projectCenter} zoom={projectZoom} />

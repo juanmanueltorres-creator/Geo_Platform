@@ -49,29 +49,14 @@ export function FieldConditions({ project, onWeather }: { project?: any; onWeath
     v === null || v === undefined ? '—' : `${Number(v).toFixed(1)}${unit}`
 
   return (
-    <Card className="bg-slate-900/70 border border-slate-800 shadow-none p-3">
-      <CardHeader className="pb-2 px-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base font-semibold text-slate-200 mb-0.5">Field Conditions</CardTitle>
-            <CardDescription className="text-xs text-slate-400">
-              <div>
-                {project ? (
-                  <>
-                    <span className="font-medium text-slate-300">{project.name}</span>
-                    <span className="ml-2 text-xs text-slate-500">{project.lat?.toFixed ? project.lat.toFixed(4) : project.lat}, {project.lon?.toFixed ? project.lon.toFixed(4) : project.lon}</span>
-                  </>
-                ) : (
-                  <>No project selected</>
-                )}
-                <br />
-                {weather && (
-                  <span className="text-xs text-slate-500">{new Date(weather.fetched_at).toLocaleString()}{weather.stale ? ' · Using last known conditions' : ''}</span>
-                )}
-              </div>
-            </CardDescription>
-          </div>
+    <Card className="bg-white/30 border border-black/10 shadow-[0_2px_8px_0_rgba(0,0,0,0.08)] p-1 px-1.5 backdrop-blur-sm">
+      <CardHeader className="pb-1 px-1.5">
+        <div className="flex items-center">
+          <CardTitle className="text-[15px] font-semibold text-slate-200 mb-0.5">{project ? project.name : 'Field Conditions'}</CardTitle>
         </div>
+        {weather && (
+          <div className="text-[11px] text-slate-500 mt-0.5">{new Date(weather.fetched_at).toLocaleString()}{weather.stale ? ' · Last known' : ''}</div>
+        )}
       </CardHeader>
 
       <CardContent className="pt-1 pb-2 px-2">
