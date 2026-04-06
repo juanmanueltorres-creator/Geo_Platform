@@ -1,3 +1,11 @@
+// Helper to safely capture map instance in ref
+function MapInstanceBridge({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
+  const map = useMap()
+  useEffect(() => {
+    mapRef.current = map
+  }, [map, mapRef])
+  return null
+}
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { MapContainer, WMSTileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet'
 import L from 'leaflet'
@@ -270,7 +278,6 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   // Fallback center and zoom — use selected project if available, else Filo del Sol
   const defaultProject = project || (projects && projects.length > 0 ? projects[0] : null)
   const defaultCenter = defaultProject ? [defaultProject.lat, defaultProject.lon] as [number, number] : [-28.49, -69.66] as [number, number]
-  const defaultZoom = defaultProject && typeof defaultProject.zoom_default === 'number' ? defaultProject.zoom_default : 18
 
   // Compute project center/zoom when a project is selected
   const projectCenter = project ? [project.lat, project.lon] as [number, number] : defaultCenter
@@ -330,10 +337,10 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
     <MapContainer
       center={projectCenter}
       zoom={projectZoom}
-      whenCreated={m => { mapRef.current = m }}
       style={{ width: '100%', height: '100%', borderRadius: '0.5rem' }}
       className="z-0"
     >
+      <MapInstanceBridge mapRef={mapRef} />
       <FitBounds drillholes={drillholes} />
       <Recenter center={projectCenter} zoom={projectZoom} />
         {/* Project markers */}
