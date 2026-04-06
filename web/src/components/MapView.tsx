@@ -5,6 +5,19 @@ import { LeafletScaleControl } from './LeafletScaleControl'
 import { api } from '@/lib/api'
 import type { Drillhole } from '@/types'
 import type { Weather } from './FieldConditions'
+
+interface Project {
+  lat: number;
+  lon: number;
+  slug: string;
+  name: string;
+  commodity?: string;
+  stage?: string;
+  marker_color?: string;
+  icon?: string;
+  detail_level?: string;
+  zoom_default?: number;
+}
 // import { WindOverlay } from './WindOverlay'
 import {
   riversGeoJSON,
@@ -41,9 +54,12 @@ const TILE_LAYERS = {
 type TileLayerKey = keyof typeof TILE_LAYERS
 
 /** Auto-fit map bounds when drillholes load */
-function FitBounds({ drillholes }: { drillholes: Drillhole[] }) {
+function FitBounds({ drillholes, projectSlug }: { drillholes: Drillhole[]; projectSlug?: string | null }) {
   const map = useMap()
   useEffect(() => {
+    // Only auto-fit bounds for the flagship project (Filo del Sol).
+    // If a regional project is selected, we prefer explicit recentering.
+    if (projectSlug && projectSlug !== 'filo-del-sol') return
     if (drillholes.length === 0) return
     const points = drillholes
       .filter(h => h.geometry?.coordinates)
@@ -55,6 +71,20 @@ function FitBounds({ drillholes }: { drillholes: Drillhole[] }) {
       map.fitBounds(L.latLngBounds(points), { padding: [120, 120], maxZoom: 12 })
     }
   }, [drillholes, map])
+  return null
+}
+
+/** Recenter map when the selected project changes */
+function Recenter({ center, zoom }: { center?: [number, number] | undefined; zoom?: number | undefined }) {
+  const map = useMap()
+  useEffect(() => {
+    if (!center) return
+    try {
+      map.setView(center, zoom ?? map.getZoom(), { animate: true })
+    } catch (e) {
+      // ignore map errors
+    }
+  }, [center?.[0], center?.[1], zoom, map])
   return null
 }
 
@@ -137,13 +167,54 @@ interface MapViewProps {
   selectedDrillholeId?: string | null
   onLoadingChange?: (loading: boolean) => void
   weather?: Weather | null
+  project?: Project | null
+  projects?: Project[]
+  onProjectSelect?: (project: Project) => void
 }
 
-export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillholeId, onLoadingChange, weather }: MapViewProps) {
+export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillholeId, onLoadingChange, weather, project, projects = [], onProjectSelect }: MapViewProps) {
   const [drillholes, setDrillholes] = useState<Drillhole[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [tileLayer, setTileLayer] = useState<TileLayerKey>('esri')
+  
+  // Render all project markers, highlight the selected one
+  function renderProjectMarkers() {
+    if (!projects || projects.length === 0) return null
+    return projects.map((p) => {
+      const isSelected = project && p.slug === project.slug
+      const size = isSelected ? 32 : 22
+      const iconHtml = `<svg width="${size}" height="${size}" viewBox="0 0 32 32">
+        <circle cx="16" cy="16" r="13" fill="${p.marker_color || (isSelected ? '#2563eb' : '#64748b')}" stroke="#fff" stroke-width="3" />
+        <text x="16" y="21" text-anchor="middle" font-size="16" fill="#fff">★</text>
+      </svg>`
+      const leafletIcon = L.divIcon({
+        className: isSelected ? 'selected-project-marker' : 'project-marker',
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        html: iconHtml,
+      })
+      return (
+        <Marker
+          key={p.slug}
+          position={[p.lat, p.lon]}
+          icon={leafletIcon}
+          zIndexOffset={isSelected ? 1000 : 500}
+          eventHandlers={{
+            click: () => onProjectSelect && onProjectSelect(p)
+          }}
+        >
+          <Popup>
+            <div className="text-sm">
+              <div className="font-bold text-geo-primary mb-1">{p.name}</div>
+              <div className="text-xs mb-1">{p.lat.toFixed(5)}, {p.lon.toFixed(5)}</div>
+              <div className="text-xs">{p.commodity} &middot; {p.stage}</div>
+            </div>
+          </Popup>
+        </Marker>
+      )
+    })
+  }
+  const [tileLayer, setTileLayer] = useState<TileLayerKey>('terrain')
   const [visibleLayers, setVisibleLayers] = useState<Record<GeologyLayerKey, boolean>>({
     rivers: true,
     waterBodies: true,
@@ -163,6 +234,9 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
 
   const [layerPanelOpen, setLayerPanelOpen] = useState(false)
   const [isMobileFs, setIsMobileFs] = useState(false)
+
+  // Leaflet map instance reference so we can imperatively set view on project change
+  const mapRef = useRef<L.Map | null>(null)
 
   const fetchDrillholes = useCallback(async () => {
     try {
@@ -192,8 +266,29 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
     fetchDrillholes()
   }, [fetchDrillholes])
 
-  // Fallback center — Filo del Sol project, overridden by FitBounds once data loads
-  const defaultCenter = [-28.49, -69.66] as [number, number]
+
+  // Fallback center and zoom — use selected project if available, else Filo del Sol
+  const defaultProject = project || (projects && projects.length > 0 ? projects[0] : null)
+  const defaultCenter = defaultProject ? [defaultProject.lat, defaultProject.lon] as [number, number] : [-28.49, -69.66] as [number, number]
+  const defaultZoom = defaultProject && typeof defaultProject.zoom_default === 'number' ? defaultProject.zoom_default : 18
+
+  // Compute project center/zoom when a project is selected
+  const projectCenter = project ? [project.lat, project.lon] as [number, number] : defaultCenter
+  const projectZoom = project && typeof project.zoom_default === 'number'
+    ? project.zoom_default
+    : 18
+
+  // Recenter imperatively when the selected project changes — use the project's `zoom_default` when provided.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !project) return
+    const targetZoom = project.zoom_default !== undefined ? project.zoom_default : (project.detail_level === 'full' ? 12 : 9)
+    try {
+      map.setView([project.lat, project.lon], targetZoom)
+    } catch (e) {
+      // ignore map errors in exotic environments
+    }
+  }, [project?.lat, project?.lon, project?.zoom_default, project?.detail_level])
 
   if (loading) {
     return (
@@ -233,12 +328,16 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
     }>
       {/* Wind overlay removed for cleaner UI */}
     <MapContainer
-      center={defaultCenter}
-      zoom={12}
+      center={projectCenter}
+      zoom={projectZoom}
+      whenCreated={m => { mapRef.current = m }}
       style={{ width: '100%', height: '100%', borderRadius: '0.5rem' }}
       className="z-0"
     >
       <FitBounds drillholes={drillholes} />
+      <Recenter center={projectCenter} zoom={projectZoom} />
+        {/* Project markers */}
+        {renderProjectMarkers()}
       <DynamicTileLayer
         url={TILE_LAYERS[tileLayer].url}
         attribution={TILE_LAYERS[tileLayer].attribution}

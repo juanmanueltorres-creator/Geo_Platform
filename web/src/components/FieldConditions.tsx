@@ -6,7 +6,7 @@ import { msToKmh, degToCardinal } from '@/lib/windUtils'
 
 export type Weather = any
 
-export function FieldConditions({ onWeather }: { onWeather?: (weather: any) => void } = {}) {
+export function FieldConditions({ project, onWeather }: { project?: any; onWeather?: (weather: any) => void } = {}) {
   const [weather, setWeather] = useState<Weather | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -15,30 +15,29 @@ export function FieldConditions({ onWeather }: { onWeather?: (weather: any) => v
     let mounted = true
     setLoading(true)
     console.log("[weather] fetching current weather", new Date().toISOString());
-    api.getProjectWeatherCurrent()
-      .then((d) => {
+
+    const fetchFn = project && project.slug
+      ? api.getProjectWeatherCurrentBySlug.bind(null, project.slug)
+      : api.getProjectWeatherCurrent
+
+    fetchFn()
+      .then((data: any) => {
         if (!mounted) return
-        setWeather(d)
+        setWeather(data)
         setError(null)
-        if (onWeather) onWeather(d)
+        if (onWeather) onWeather(data)
       })
-      .catch((err) => {
+      .catch((err: any) => {
         if (!mounted) return
-        // If backend returned structured 503 (weather_unavailable), show friendly message
-        const resp = err?.response
-        if (resp && resp.data && resp.data.error === 'weather_unavailable') {
-          setError('Weather temporarily unavailable')
-        } else {
-          setError('Unable to fetch weather')
-        }
-        if (onWeather) onWeather(null)
+        setError(err?.message || 'Failed to fetch weather')
+        setWeather(null)
       })
       .finally(() => {
         if (!mounted) return
         setLoading(false)
       })
     return () => { mounted = false }
-  }, [onWeather])
+  }, [onWeather, project?.slug])
 
   const cur = weather?.current
   if (cur) {
@@ -56,11 +55,20 @@ export function FieldConditions({ onWeather }: { onWeather?: (weather: any) => v
           <div>
             <CardTitle>Field Conditions</CardTitle>
             <CardDescription>
-              {weather ? (
-                `${new Date(weather.fetched_at).toLocaleString()}${weather.stale ? ' · Using last known conditions' : ''}`
-              ) : (
-                'Filo del Sol'
-              )}
+              <div>
+                {project ? (
+                  <>
+                    <span className="font-semibold text-geo-primary">{project.name}</span>
+                    <span className="ml-2 text-xs text-slate-400">{project.lat.toFixed(5)}, {project.lon.toFixed(5)}</span>
+                  </>
+                ) : (
+                  <>No project selected</>
+                )}
+                <br />
+                {weather && (
+                  <span className="text-xs text-slate-400">{new Date(weather.fetched_at).toLocaleString()}{weather.stale ? ' · Using last known conditions' : ''}</span>
+                )}
+              </div>
             </CardDescription>
           </div>
         </div>

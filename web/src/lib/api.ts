@@ -87,4 +87,15 @@ export const api = {
     const response = await apiClient.get('/project/weather/current')
     return response.data
   },
+  // Get list of available projects (static for now)
+  getProjects: async (): Promise<any[]> => {
+    const response = await apiClient.get('/projects')
+    return response.data
+  },
+
+  // Get project-scoped weather by project slug
+  getProjectWeatherCurrentBySlug: async (slug: string): Promise<any> => {
+    const response = await apiClient.get(`/projects/${slug}/weather/current`)
+    return response.data
+  },
 }
