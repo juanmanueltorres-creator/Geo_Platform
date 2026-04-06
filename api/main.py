@@ -11,17 +11,19 @@ import secrets
 import time
 import logging
 from dotenv import load_dotenv
+import httpx
+from datetime import datetime, timezone, timedelta
 # LOGGING DE ARRANQUE PARA DEBUG EN RENDER
 print("[GeoPlatform] main.py loaded: __name__=", __name__)
 try:
     print("[GeoPlatform] Intentando importar weather (relative)")
-    from weather import get_current_weather, cache_info, clear_cache
+    from weather import get_current_weather, cache_info, clear_cache, cache, TTL_SECONDS
     print("[GeoPlatform] Importación relative de weather OK")
 except ModuleNotFoundError as e:
     print("[GeoPlatform] Falla import relative, error:", e)
     try:
         print("[GeoPlatform] Intentando importar weather (absolute)")
-        from api.weather import get_current_weather, cache_info, clear_cache
+        from api.weather import get_current_weather, cache_info, clear_cache, cache, TTL_SECONDS
         print("[GeoPlatform] Importación absolute de weather OK")
     except ModuleNotFoundError as e2:
         print("[GeoPlatform] Falla import absolute, error:", e2)
@@ -63,11 +65,189 @@ app.add_middleware(
     allow_origins=[
         "https://geo-plataform.onrender.com",
         "https://geo-platform-cyan.vercel.app",
+        "http://127.0.0.1:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# =============================
+# PROJECTS (static stub for multi-project support)
+# =============================
+
+PROJECTS = [
+        {
+            "name": "Filo del Sol",
+            "slug": "filo-del-sol",
+            "lat": -28.489722,
+            "lon": -69.660000,
+            "commodity": "Cu-Au-Ag",
+            "stage": "advanced",
+            "status_label": "Advanced Project",
+            "project_type": "Porphyry Cu-Au-Ag",
+            "company": "Filo Corp / Lundin Group",
+            "jurisdiction": "San Juan, Argentina",
+            "detail_level": "full",
+            "zoom_default": 11,
+            "icon": "flagship-star",
+            "marker_color": "#f59e0b",
+            "notes": "One of the largest recent copper discoveries in the Andes. Flagship project."
+        },
+        {
+            "name": "Josemaría",
+            "slug": "josemaria",
+            "lat": -28.441111,
+            "lon": -69.548333,
+            "commodity": "Cu-Au",
+            "stage": "advanced",
+            "status_label": "Construction Ready",
+            "project_type": "Porphyry Cu-Au",
+            "company": "Lundin Mining",
+            "jurisdiction": "San Juan, Argentina",
+            "detail_level": "regional",
+            "zoom_default": 11,
+            "icon": "project-diamond",
+            "marker_color": "#60a5fa",
+            "notes": "One of the most advanced undeveloped copper projects in Argentina."
+        },
+        {
+            "name": "Veladero",
+            "slug": "veladero",
+            "lat": -29.409167,
+            "lon": -69.896944,
+            "commodity": "Au-Ag",
+            "stage": "operation",
+            "status_label": "Operating Mine",
+            "project_type": "High-sulfidation epithermal",
+            "company": "Barrick Gold / Shandong Gold",
+            "jurisdiction": "San Juan, Argentina",
+            "detail_level": "regional",
+            "zoom_default": 10,
+            "icon": "operation-circle",
+            "marker_color": "#ef4444",
+            "notes": "Large-scale operating gold mine in the Andes."
+        },
+        {
+            "name": "Gualcamayo",
+            "slug": "gualcamayo",
+            "lat": -29.719444,
+            "lon": -68.640556,
+            "commodity": "Au",
+            "stage": "operation",
+            "status_label": "Operating / Transition",
+            "project_type": "Epithermal gold",
+            "company": "Minas Argentinas (Agnico legacy / current operator varies)",
+            "jurisdiction": "San Juan, Argentina",
+            "detail_level": "regional",
+            "zoom_default": 10,
+            "icon": "operation-circle",
+            "marker_color": "#eab308",
+            "notes": "Mature gold district with oxide and sulfide potential."
+        },
+        {
+            "name": "El Pachón",
+            "slug": "el-pachon",
+            "lat": -31.753611,
+            "lon": -70.430556,
+            "commodity": "Cu-Mo",
+            "stage": "advanced",
+            "status_label": "Advanced Project",
+            "project_type": "Porphyry Cu-Mo",
+            "company": "Glencore",
+            "jurisdiction": "San Juan, Argentina",
+            "detail_level": "regional",
+            "zoom_default": 10,
+            "icon": "project-diamond",
+            "marker_color": "#22c55e",
+            "notes": "One of the largest undeveloped copper resources in Argentina."
+        },
+        {
+            "name": "Los Azules",
+            "slug": "los-azules",
+            "lat": -31.241667,
+            "lon": -70.176667,
+            "commodity": "Cu",
+            "stage": "advanced",
+            "status_label": "Advanced Project",
+            "project_type": "Porphyry Cu",
+            "company": "McEwen Mining",
+            "jurisdiction": "San Juan, Argentina",
+            "detail_level": "regional",
+            "zoom_default": 10,
+            "icon": "project-diamond",
+            "marker_color": "#38bdf8",
+            "notes": "Large copper porphyry with strong development momentum."
+        },
+        {
+            "name": "Altar",
+            "slug": "altar",
+            "lat": -31.483056,
+            "lon": -70.500000,
+            "commodity": "Cu-Au",
+            "stage": "advanced",
+            "status_label": "Advanced Exploration",
+            "project_type": "Porphyry Cu-Au",
+            "company": "Aldebaran Resources",
+            "jurisdiction": "San Juan, Argentina",
+            "detail_level": "regional",
+            "zoom_default": 10,
+            "icon": "project-diamond",
+            "marker_color": "#a78bfa",
+            "notes": "Multiple porphyry centers with large-scale potential."
+        },
+        {
+            "name": "Hualilán",
+            "slug": "hualilan",
+            "lat": -30.736667,
+            "lon": -68.953333,
+            "commodity": "Au",
+            "stage": "development",
+            "status_label": "Development",
+            "project_type": "Epithermal gold",
+            "company": "Challenger Gold",
+            "jurisdiction": "San Juan, Argentina",
+            "detail_level": "regional",
+            "zoom_default": 11,
+            "icon": "project-diamond",
+            "marker_color": "#facc15",
+            "notes": "High-grade gold system with near-term development potential."
+        },
+        {
+            "name": "Casposo",
+            "slug": "casposo",
+            "lat": -31.203333,
+            "lon": -69.638611,
+            "commodity": "Au-Ag",
+            "stage": "brownfield",
+            "status_label": "Brownfield",
+            "project_type": "Epithermal Au-Ag",
+            "company": "Austral Gold",
+            "jurisdiction": "San Juan, Argentina",
+            "detail_level": "regional",
+            "zoom_default": 11,
+            "icon": "brownfield-circle",
+            "marker_color": "#fb7185",
+            "notes": "Past producer with reactivation potential."
+        },
+        {
+            "name": "Filo Sur",
+            "slug": "filo-sur",
+            "lat": -28.591667,
+            "lon": -69.633333,
+            "commodity": "Cu-Au",
+            "stage": "exploration",
+            "status_label": "Exploration",
+            "project_type": "Porphyry Cu-Au",
+            "company": "Mogotes Metals",
+            "jurisdiction": "San Juan, Argentina",
+            "detail_level": "regional",
+            "zoom_default": 11,
+            "icon": "prospect-circle",
+            "marker_color": "#34d399",
+            "notes": "Early-stage exploration within Vicuña district."
+        }
+]
 
 # =============================
 # CONNECTION POOLING
@@ -284,6 +464,176 @@ def project_weather_current(
     except Exception as e:
         logger.error(f"Weather endpoint error: {e}")
         raise HTTPException(status_code=503, detail="Weather service unavailable")
+
+
+# =============================
+# PROJECTS + per-project weather
+# =============================
+
+
+@app.get("/projects")
+def list_projects():
+    """Return the configured projects (static list for now)."""
+    return PROJECTS
+
+
+@app.get("/projects/{slug}/weather/current")
+def project_slug_weather_current(
+    slug: str,
+    force_refresh: bool = Query(False, description="Force refresh and ignore cache")
+):
+    """Return normalized current weather for a given project slug.
+
+    This endpoint uses the project's coordinates and a small server-side
+    cache (shared with the existing weather cache) to avoid calling the
+    upstream provider from the frontend.
+    """
+    proj = next((p for p in PROJECTS if p["slug"] == slug), None)
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    key = f"project:{slug}:current"
+    raw = None
+    try:
+        raw = cache.get_raw(key)
+    except Exception:
+        raw = None
+
+    now_ts = time.time()
+    if not force_refresh and raw and raw.get("expires_at", 0) > now_ts:
+        return raw["value"]
+
+    # Fetch from Open-Meteo using the project's coordinates
+    base = "https://api.open-meteo.com/v1/forecast"
+    params = {
+        "latitude": proj["lat"],
+        "longitude": proj["lon"],
+        "current_weather": "true",
+        "hourly": "relativehumidity_2m,precipitation,cloudcover,windgusts_10m",
+        "daily": "sunrise,sunset",
+        "timezone": "auto",
+        "temperature_unit": "celsius",
+        "windspeed_unit": "ms",
+    }
+
+    try:
+        resp = httpx.get(base, params=params, timeout=10.0)
+        resp.raise_for_status()
+        data = resp.json()
+    except httpx.HTTPStatusError as http_err:
+        status = None
+        try:
+            status = http_err.response.status_code if http_err.response is not None else None
+        except Exception:
+            status = None
+
+        logger.warning(f"Open-Meteo HTTP error: status={status}")
+
+        # Prefer stale cache if available
+        if raw and "value" in raw:
+            stale = raw["value"].copy()
+            stale["stale"] = True
+            stale["source_status"] = f"upstream_error_{status}"
+            return stale
+        raise HTTPException(status_code=503, detail={
+            "error": "weather_unavailable",
+            "message": "Upstream weather provider error",
+            "source_status": f"upstream_error_{status}"
+        })
+    except Exception as e:
+        logger.warning(f"Open-Meteo fetch failed: {e}")
+        if raw and "value" in raw:
+            stale = raw["value"].copy()
+            stale["stale"] = True
+            stale["source_status"] = "unavailable"
+            return stale
+        raise HTTPException(status_code=503, detail={
+            "error": "weather_unavailable",
+            "message": "Weather provider unavailable",
+            "source_status": "unavailable"
+        })
+
+    # Normalize payload similar to existing backend shape
+    cw = data.get("current_weather", {})
+    hourly = data.get("hourly", {})
+    daily = data.get("daily", {})
+
+    time_values = hourly.get("time", [])
+    cw_time = cw.get("time")
+
+    idx = None
+    if cw_time and time_values:
+        try:
+            idx = time_values.index(cw_time)
+        except ValueError:
+            idx = None
+
+    def _hourly_val(name: str):
+        arr = hourly.get(name, [])
+        if idx is not None and idx < len(arr):
+            return arr[idx]
+        return None
+
+    temperature_c = cw.get("temperature")
+    wind_speed_ms = cw.get("windspeed")
+    wind_direction_deg = cw.get("winddirection")
+
+    wind_gust_ms = _hourly_val("windgusts_10m")
+    humidity_percent = _hourly_val("relativehumidity_2m")
+    precipitation_mm = _hourly_val("precipitation")
+    cloud_cover_percent = _hourly_val("cloudcover")
+
+    sunrise = None
+    sunset = None
+    try:
+        daily_dates = daily.get("time", [])
+        if cw_time and daily_dates:
+            from datetime import datetime as _dt
+
+            dt = _dt.fromisoformat(cw_time)
+            date_str = dt.date().isoformat()
+            if date_str in daily_dates:
+                d_idx = daily_dates.index(date_str)
+                sr = daily.get("sunrise", [])
+                ss = daily.get("sunset", [])
+                if d_idx < len(sr):
+                    sunrise = sr[d_idx]
+                if d_idx < len(ss):
+                    sunset = ss[d_idx]
+    except Exception:
+        pass
+
+    fetched_at = datetime.now(timezone.utc).isoformat()
+    expires_at = (datetime.now(timezone.utc) + timedelta(seconds=TTL_SECONDS)).isoformat()
+
+    normalized = {
+        "project": proj["name"],
+        "coordinates": {"lat": proj["lat"], "lon": proj["lon"]},
+        "source": {"provider": "open-meteo", "api_url": base},
+        "fetched_at": fetched_at,
+        "expires_at": expires_at,
+        "ttl_seconds": TTL_SECONDS,
+        "current": {
+            "time": cw_time,
+            "temperature_c": temperature_c,
+            "wind_speed_ms": wind_speed_ms,
+            "wind_gust_ms": wind_gust_ms,
+            "wind_direction_deg": wind_direction_deg,
+            "precipitation_mm": precipitation_mm,
+            "cloud_cover_percent": cloud_cover_percent,
+            "humidity_percent": humidity_percent,
+            "sunrise": sunrise,
+            "sunset": sunset,
+        },
+    }
+
+    try:
+        cache.set(key, normalized, TTL_SECONDS)
+    except Exception:
+        # caching failure should not block the response
+        logger.debug("Cache set failed for project weather", exc_info=True)
+
+    return normalized
 
 
 # =============================
