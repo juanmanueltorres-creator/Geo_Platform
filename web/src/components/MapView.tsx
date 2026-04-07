@@ -1,21 +1,5 @@
-// Helper to safely capture map instance in ref
-function MapInstanceBridge({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
-  const map = useMap()
-  useEffect(() => {
-    mapRef.current = map
-  }, [map, mapRef])
-  return null
-}
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { MapContainer, WMSTileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet'
-import L from 'leaflet'
-import { LeafletScaleControl } from './LeafletScaleControl'
-import { FieldConditions } from './FieldConditions'
-import { api } from '@/lib/api'
-import type { Drillhole } from '@/types'
-import type { Weather } from './FieldConditions'
-
-interface Project {
+// Minimal Project type for local use
+type Project = {
   lat: number;
   lon: number;
   slug: string;
@@ -27,6 +11,79 @@ interface Project {
   detail_level?: string;
   zoom_default?: number;
 }
+
+// --- WeatherPanelOverlay: minimal collapsible weather panel ---
+function WeatherPanelOverlay({ project, onWeather }: { project?: any, onWeather?: (w: any) => void }) {
+  const [open, setOpen] = useState(false)
+  const title = 'Filo del Sol Weather'
+  return (
+    <div style={{ width: open ? 170 : 'auto', transition: 'width 0.18s' }}>
+      {!open && (
+        <button
+          aria-label="Show weather panel"
+          title="Show weather panel"
+          className="flex items-center gap-2"
+          style={{
+            background: 'rgba(15,23,42,0.92)',
+            border: '1px solid rgba(148,163,184,0.3)',
+            borderRadius: 6,
+            padding: '5px 9px',
+            cursor: 'pointer',
+            color: '#e2e8f0',
+            fontSize: 13,
+            fontWeight: 600,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+            justifyContent: 'flex-start',
+            marginTop: 8,
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(30,41,59,0.98)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(15,23,42,0.92)')}
+          onClick={() => setOpen(true)}
+        >
+          <span role="img" aria-label="weather" style={{ fontSize: 17, color: '#f59e0b', fontWeight: 700 }}>☀️</span>
+          <span style={{ color: '#e2e8f0', fontWeight: 600 }}>Weather</span>
+        </button>
+      )}
+      {open && (
+        <div className="relative" style={{ marginTop: 8 }}>
+          <FieldConditions
+            project={project}
+            onWeather={onWeather}
+            expanded={true}
+          />
+          <button
+            aria-label="Close weather panel"
+            title="Close weather panel"
+            className="absolute top-1 right-1 w-6 h-6 rounded bg-slate-800/80 text-slate-100 hover:bg-amber-700/80 flex items-center justify-center border border-slate-700"
+            style={{ fontSize: 15, lineHeight: 1, padding: 0 }}
+            onClick={() => setOpen(false)}
+          >
+            ×
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { MapContainer, WMSTileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet'
+import L from 'leaflet'
+import { LeafletScaleControl } from './LeafletScaleControl'
+import { FieldConditions } from './FieldConditions'
+import { api } from '@/lib/api'
+import type { Drillhole } from '@/types'
+import type { Weather } from './FieldConditions'
+
+// Helper to safely capture map instance in ref
+function MapInstanceBridge({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
+  const map = useMap()
+  useEffect(() => {
+    mapRef.current = map
+  }, [map, mapRef])
+  return null
+}
+
 // import { WindOverlay } from './WindOverlay'
 import {
   riversGeoJSON,
@@ -341,19 +398,34 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       style={{ width: '100%', height: '100%', borderRadius: '0.5rem', position: 'relative' }}
       className="z-0"
     >
-      {/* FieldConditions overlay — now inside the Leaflet map container for fullscreen compatibility */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 74, // slightly lower for more comfortable spacing below zoom controls
-          left: 12,
-          zIndex: 1200,
-          width: 170,
-          maxWidth: '90%',
-          pointerEvents: 'auto',
-        }}
-      >
-        <FieldConditions project={project} onWeather={onWeather} />
+      {/* Right-side control stack: basemap, Layers */}
+      <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 1200, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'stretch', minWidth: 120 }}>
+        {/* Basemap selector */}
+        <div
+          style={{
+            display: 'flex', gap: 4, background: 'rgba(255,255,255,0.9)',
+            borderRadius: 6, padding: 3, boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+          }}
+        >
+          {(Object.keys(TILE_LAYERS) as TileLayerKey[]).map(key => (
+            <button
+              key={key}
+              onClick={() => setTileLayer(key)}
+              style={{
+                padding: '4px 10px', fontSize: 12, fontWeight: 600,
+                border: 'none', borderRadius: 4, cursor: 'pointer',
+                background: tileLayer === key ? '#f59e0b' : 'transparent',
+                color: tileLayer === key ? '#fff' : '#333',
+              }}
+            >
+              {TILE_LAYERS[key].label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {/* WeatherPanelOverlay centrado arriba */}
+      <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', zIndex: 1300 }}>
+        <WeatherPanelOverlay project={project} onWeather={onWeather} />
       </div>
       <MapInstanceBridge mapRef={mapRef} />
       <FitBounds drillholes={drillholes} />
@@ -368,30 +440,6 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       {/* Leaflet metric scale control (bottom-right, unobtrusive) */}
       <LeafletScaleControl />
       <FullscreenToggle onMobileToggle={() => setIsMobileFs(v => !v)} isMobileFs={isMobileFs} />
-
-      {/* Layer switcher button */}
-      <div
-        style={{
-          position: 'absolute', top: 10, right: 10, zIndex: 1000,
-          display: 'flex', gap: 4, background: 'rgba(255,255,255,0.9)',
-          borderRadius: 6, padding: 3, boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-        }}
-      >
-        {(Object.keys(TILE_LAYERS) as TileLayerKey[]).map(key => (
-          <button
-            key={key}
-            onClick={() => setTileLayer(key)}
-            style={{
-              padding: '4px 10px', fontSize: 12, fontWeight: 600,
-              border: 'none', borderRadius: 4, cursor: 'pointer',
-              background: tileLayer === key ? '#f59e0b' : 'transparent',
-              color: tileLayer === key ? '#fff' : '#333',
-            }}
-          >
-            {TILE_LAYERS[key].label}
-          </button>
-        ))}
-      </div>
 
       {/* SEGEMAR WMS — 1:500K surface geology (border zone map) */}
       {showGeologyWMS && (
@@ -605,7 +653,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       )}
 
       {/* Collapsible layer panel */}
-      <div style={{ position: 'absolute', top: 50, right: 10, zIndex: 1000 }}>
+      <div style={{ position: 'absolute', top: 50, right: 10, zIndex: 1301 }}>
         {/* Toggle button — always visible */}
         <button
           onClick={() => setLayerPanelOpen(v => !v)}
@@ -615,8 +663,10 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
             background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(148,163,184,0.3)',
             borderRadius: 6, padding: '5px 9px', cursor: 'pointer',
             color: '#e2e8f0', fontSize: 11, fontWeight: 600,
-            boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.4)', width: '100%',
           }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(30,41,59,0.98)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(15,23,42,0.92)')}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M12 2L2 7l10 5 10-5-10-5z"/>
