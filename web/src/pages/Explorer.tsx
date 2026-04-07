@@ -1,17 +1,41 @@
+
 import { DrillholeSummaryCard } from '@/components/DrillholeSummaryCard'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Zap, Globe } from 'lucide-react'
 import { MapView } from '@/components/MapView'
 import type { Weather } from '@/components/FieldConditions'
-import { AssayChart } from '@/components/AssayChart'
 import { ThemeToggle } from '@/components/ThemeToggle'
-
-
 import { TopDrillholes } from '@/components/TopDrillholes'
 import { ExplorationRadar } from '@/components/ExplorationRadar'
-
 import { ProjectOverview } from '@/components/ProjectOverview'
 import type { Drillhole } from '@/types'
+import { AssayChart } from '@/components/AssayChart'
+
+// --- AssayChartToggle: mobile-only expand/collapse ---
+function AssayChartToggle({ drillholeId, holeName }: { drillholeId: string, holeName: string }) {
+  const [show, setShow] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024 // Desktop: visible by default
+    }
+    return true
+  })
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024
+  return (
+    <div>
+      {isMobile && (
+        <button
+          className="mb-2 px-3 py-1 rounded bg-slate-800 text-slate-100 text-sm font-medium border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+          onClick={() => setShow((v) => !v)}
+        >
+          {show ? 'Hide analysis' : 'View analysis'}
+        </button>
+      )}
+      {(show || !isMobile) && (
+        <AssayChart drillholeId={drillholeId} holeName={holeName} />
+      )}
+    </div>
+  )
+}
 
 export function Explorer() {
   const [weather, setWeather] = useState<Weather | null>(null)
@@ -129,7 +153,15 @@ export function Explorer() {
 
             {/* Map Section — visually dominant */}
 
-            <div className="relative h-[800px] mt-2">
+            <div
+              className="relative mt-2"
+              style={{
+                height: '800px',
+                ...(typeof window !== 'undefined' && window.innerWidth < 640
+                  ? { height: '400px' } // Mobile: shorter map
+                  : {}),
+              }}
+            >
               <MapView
                 onDrillholeSelect={setSelectedDrillhole}
                 onDrillholesLoaded={setAllDrillholes}
@@ -153,16 +185,20 @@ export function Explorer() {
                     maxDepth={selectedDrillhole.max_depth}
                   />
                 </div>
-                <div className="mt-4">
-                  <AssayChart 
-                    drillholeId={selectedDrillhole.drillhole_id}
-                    holeName={selectedDrillhole.drillhole}
-                  />
+                <div
+                  className="mt-4 w-full"
+                  style={{
+                    maxWidth: '420px', // Desktop: constrain width
+                    minHeight: window.innerWidth >= 1024 ? '340px' : undefined, // Desktop: taller chart
+                    marginLeft: window.innerWidth >= 1024 ? 'auto' : undefined,
+                    marginRight: window.innerWidth >= 1024 ? 'auto' : undefined,
+                  }}
+                >
+                  <AssayChartToggle drillholeId={selectedDrillhole.drillhole_id} holeName={selectedDrillhole.drillhole} />
                 </div>
               </>
             )}
           </div>
-
           {/* Sidebar: ExplorationRadar, TopDrillholes */}
           <div className="space-y-8">
             <ExplorationRadar
