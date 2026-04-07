@@ -6,7 +6,8 @@ import { msToKmh, degToCardinal } from '@/lib/windUtils'
 
 export type Weather = any
 
-export function FieldConditions({ project, onWeather }: { project?: any; onWeather?: (weather: any) => void } = {}) {
+export function FieldConditions({ project, onWeather, expanded = true, title }: { project?: any; onWeather?: (weather: any) => void; expanded?: boolean; title?: string } = {}) {
+    if (!expanded) return null
   const [weather, setWeather] = useState<Weather | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -49,84 +50,83 @@ export function FieldConditions({ project, onWeather }: { project?: any; onWeath
     v === null || v === undefined ? '—' : `${Number(v).toFixed(1)}${unit}`
 
   return (
-    <Card className="bg-white/30 border border-black/10 shadow-[0_2px_8px_0_rgba(0,0,0,0.08)] p-1 px-1.5 backdrop-blur-sm">
-      <CardHeader className="pb-1 px-1.5">
-        <div className="flex items-center">
-          <CardTitle className="text-[15px] font-semibold text-slate-200 mb-0.5">{project ? project.name : 'Field Conditions'}</CardTitle>
+    <Card className="bg-[rgba(23,37,84,0.48)] border border-white/20 shadow-[0_6px_24px_0_rgba(0,0,0,0.18)] rounded-lg p-3 px-4 backdrop-blur-xl text-white">
+      <CardHeader className="pb-2 px-2">
+        <div className="flex flex-col gap-1">
+          <CardTitle className="text-[15px] font-semibold text-white tracking-tight leading-tight">{typeof title === 'string' && title.length > 0 ? title : 'Weather'}</CardTitle>
+          <span className="text-[12px] text-blue-100 font-semibold">Current conditions</span>
         </div>
         {weather && (
-          <div className="text-[11px] text-slate-500 mt-0.5">{new Date(weather.fetched_at).toLocaleString()}{weather.stale ? ' · Last known' : ''}</div>
+          <div className="text-[11px] text-blue-200 mt-0.5 font-medium">{new Date(weather.fetched_at).toLocaleString()}{weather.stale ? ' · Last known' : ''}</div>
         )}
       </CardHeader>
 
-      <CardContent className="pt-1 pb-2 px-2">
+      <CardContent className="pt-2 pb-2 px-2 flex flex-col gap-2">
         {loading ? (
-          <div className="text-xs text-slate-400">Loading…</div>
+          <div className="text-xs text-white/70">Loading…</div>
         ) : error ? (
           <div className="text-xs text-rose-400">{error}</div>
         ) : (
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-1.5">
-              <Thermometer className="w-3.5 h-3.5 text-amber-400" />
-              <div>
-                <div className="text-[11px] text-slate-400">Temperature</div>
-                <div className="font-medium text-slate-200">{fmt(cur?.temperature_c, ' °C')}</div>
-              </div>
+          <>
+            {/* Hero metric: temperatura */}
+            <div className="flex items-center gap-2.5 justify-center border-b border-white/10 pb-2 mb-1">
+              <Thermometer className="w-5 h-5 text-amber-400" />
+              <div className="text-[2rem] leading-none font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.18)]">{fmt(cur?.temperature_c, '°C')}</div>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <Wind className="w-3.5 h-3.5 text-sky-400" style={cur?.wind_dir_deg != null && !isNaN(cur.wind_dir_deg) ? { transform: `rotate(${cur.wind_dir_deg}deg)` } : {}} />
-              <div>
-                <div className="text-[11px] text-slate-400">Wind</div>
-                <div className="font-medium text-slate-200">
+            {/* Métricas principales */}
+            <div className="grid grid-cols-3 gap-x-3 gap-y-2 items-end">
+              <div className="flex flex-col items-center gap-1.5">
+                <Wind className="w-4 h-4 text-sky-400 mb-0.5" style={cur?.wind_dir_deg != null && !isNaN(cur.wind_dir_deg) ? { transform: `rotate(${cur.wind_dir_deg}deg)` } : {}} />
+                <span className="text-[11px] text-blue-100 font-semibold">Wind</span>
+                <span className="font-semibold text-white text-[14px]">
                   {msToKmh(cur?.wind_speed_ms)} km/h
                   {(() => {
                     const dir = cur?.wind_dir_deg ?? cur?.wind_direction_deg;
                     if (dir != null && !isNaN(dir)) {
-                      return <span style={{ color: '#38bdf8', fontWeight: 600, marginLeft: 8 }}>{degToCardinal(dir)}</span>;
+                      return <span style={{ color: '#38bdf8', fontWeight: 700, marginLeft: 4 }}>{degToCardinal(dir)}</span>;
                     }
                     return null;
                   })()}
-                </div>
+                </span>
                 {cur?.wind_gust_ms != null && !isNaN(cur.wind_gust_ms) && (
-                  <div className="text-[11px] text-slate-400 mt-0.5">Gusts {msToKmh(cur.wind_gust_ms)} km/h</div>
+                  <span className="text-[11px] text-blue-200 mt-0.5">Gusts {msToKmh(cur.wind_gust_ms)} km/h</span>
                 )}
               </div>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <Cloud className="w-3.5 h-3.5 text-slate-500" />
-              <div>
-                <div className="text-[11px] text-slate-400">Cloud Cover</div>
-                <div className="font-medium text-slate-200">{cur?.cloud_cover_percent ?? '—'}%</div>
+              <div className="flex flex-col items-center gap-1.5">
+                <Droplet className="w-4 h-4 text-blue-300 mb-0.5" />
+                <span className="text-[11px] text-blue-100 font-semibold">Humidity</span>
+                <span className="font-semibold text-white text-[14px]">{cur?.humidity_percent ?? '—'}%</span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <Cloud className="w-4 h-4 text-blue-100 mb-0.5" />
+                <span className="text-[11px] text-blue-100 font-semibold">Clouds</span>
+                <span className="font-semibold text-white text-[14px]">{cur?.cloud_cover_percent ?? '—'}%</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <Droplet className="w-3.5 h-3.5 text-blue-400" />
-              <div>
-                <div className="text-[11px] text-slate-400">Humidity</div>
-                <div className="font-medium text-slate-200">{cur?.humidity_percent ?? '—'}%</div>
+            {/* Métricas secundarias */}
+            <div className="flex flex-row items-center justify-between gap-3 border-t border-white/10 pt-2 mt-1">
+              <div className="flex flex-col items-center flex-1 gap-1.5">
+                <CloudRain className="w-4 h-4 text-emerald-300 mb-0.5" />
+                <span className="text-[11px] text-blue-100 font-semibold">Precip</span>
+                <span className="font-semibold text-white text-[14px]">{fmt(cur?.precipitation_mm, ' mm')}</span>
+              </div>
+              <div className="flex flex-col items-center flex-1 gap-1.5 min-w-0">
+                <Sun className="w-4 h-4 text-amber-200 mb-0.5" />
+                <span className="text-[11px] text-blue-100 font-semibold">Sunrise</span>
+                <div className="flex flex-col gap-0.5 items-center w-full min-w-0 justify-center">
+                  <span className="font-semibold text-white text-[14px] text-center block">{cur?.sunrise ? new Date(cur.sunrise).toLocaleTimeString() : '—'}</span>
+                  <span className="text-[12px] text-blue-200 font-medium text-center block">{cur?.sunset ? new Date(cur.sunset).toLocaleTimeString() : ''}</span>
+                </div>
               </div>
             </div>
-
-            <div className="flex items-center gap-1.5">
-              <CloudRain className="w-3.5 h-3.5 text-emerald-400" />
-              <div>
-                <div className="text-[11px] text-slate-400">Precipitation</div>
-                <div className="font-medium text-slate-200">{fmt(cur?.precipitation_mm, ' mm')}</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <Sun className="w-3.5 h-3.5 text-amber-300" />
-              <div>
-                <div className="text-[11px] text-slate-400">Sun</div>
-                <div className="font-medium text-slate-200">{cur?.sunrise ? new Date(cur.sunrise).toLocaleTimeString() + ' / ' + new Date(cur.sunset).toLocaleTimeString() : '—'}</div>
-              </div>
-            </div>
-
-            <div className="col-span-2 text-[11px] text-slate-500 mt-1">Local time: {cur?.time ?? '—'}</div>
+          </>
+        )}
+        {/* Footer: local time */}
+        {!loading && !error && (
+          <div className="pt-2 mt-1 border-t border-white/10 text-[12px] text-blue-200 text-center font-semibold">
+            Local time: <span className="font-bold">{cur?.time ?? '—'}</span>
           </div>
         )}
       </CardContent>
