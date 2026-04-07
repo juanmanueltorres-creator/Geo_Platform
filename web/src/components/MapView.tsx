@@ -15,7 +15,6 @@ type Project = {
 // --- WeatherPanelOverlay: minimal collapsible weather panel ---
 function WeatherPanelOverlay({ project, onWeather }: { project?: any, onWeather?: (w: any) => void }) {
   const [open, setOpen] = useState(false)
-  const title = 'Filo del Sol Weather'
   return (
     <div style={{ width: open ? 170 : 'auto', transition: 'width 0.18s' }}>
       {!open && (
