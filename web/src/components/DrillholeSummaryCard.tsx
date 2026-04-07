@@ -105,42 +105,42 @@ export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth, peakZone
   return (
     <Card className="border-slate-700">
       {/* Header — hole identity + grade badge */}
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 px-3 sm:px-6">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center space-x-2">
+          <CardTitle className="text-base sm:text-lg flex items-center space-x-2">
             <FlaskConical className="w-5 h-5 text-amber-500" />
-            <span>{holeName}</span>
+            <span className="truncate max-w-[120px] sm:max-w-none">{holeName}</span>
           </CardTitle>
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${badgeStyles[grade]}`}>
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${badgeStyles[grade]}`}>
             {badgeIcons[grade]} {grade}
           </span>
         </div>
         {maxDepth != null && (
-          <p className="text-xs text-slate-500 mt-0.5">
-            {maxDepth.toFixed(0)} m total depth · {summary.total_samples} samples
+          <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+            {maxDepth.toFixed(0)} m · {summary.total_samples} samples
           </p>
         )}
       </CardHeader>
 
-      <CardContent className="space-y-3 pt-0">
+      <CardContent className="space-y-2 pt-0 px-3 sm:px-6">
         {/* Primary metric — Peak Au */}
-        <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
-          <div className="flex items-center justify-between">
+        <div className="bg-slate-800/50 rounded-lg p-2 sm:p-3 border border-slate-700/50">
+          <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Peak Au</p>
-              <p className="text-2xl font-bold text-amber-400">
+              <p className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider">Peak Au</p>
+              <p className="text-xl sm:text-2xl font-bold text-amber-400">
                 {summary.max_au != null ? summary.max_au.toFixed(3) : 'N/A'}
                 <span className="text-xs font-normal text-slate-500 ml-1">ppm</span>
               </p>
               {peakZone && (
-                <p className="text-[10px] text-amber-500/70 mt-0.5">
-                  Peak zone: {peakZone.from.toFixed(0)}–{peakZone.to.toFixed(0)} m
+                <p className="text-[9px] sm:text-[10px] text-amber-500/70 mt-0.5">
+                  Peak: {peakZone.from.toFixed(0)}–{peakZone.to.toFixed(0)} m
                 </p>
               )}
             </div>
             <div className="text-right">
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Avg Au</p>
-              <p className="text-lg font-semibold text-slate-300">
+              <p className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider">Avg Au</p>
+              <p className="text-base sm:text-lg font-semibold text-slate-300">
                 {summary.avg_au != null ? summary.avg_au.toFixed(3) : 'N/A'}
                 <span className="text-xs font-normal text-slate-500 ml-1">ppm</span>
               </p>
@@ -150,7 +150,7 @@ export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth, peakZone
           {/* Grade bar */}
           {summary.max_au != null && (
             <div className="mt-2">
-              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+              <div className="h-1 bg-slate-700 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
                     grade === 'HIGH GRADE'
@@ -163,19 +163,19 @@ export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth, peakZone
                 />
               </div>
               <div className="flex justify-between mt-0.5">
-                <span className="text-[10px] text-slate-600">0</span>
-                <span className="text-[10px] text-slate-600">0.1</span>
-                <span className="text-[10px] text-slate-600">1.0</span>
-                <span className="text-[10px] text-slate-600">2.0+</span>
+                <span className="text-[9px] text-slate-600">0</span>
+                <span className="text-[9px] text-slate-600">0.1</span>
+                <span className="text-[9px] text-slate-600">1.0</span>
+                <span className="text-[9px] text-slate-600">2.0+</span>
               </div>
             </div>
           )}
         </div>
 
         {/* Insight block — signal quality */}
-        <div className="bg-slate-800/30 rounded-lg p-2.5 border border-slate-700/30">
-          <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Signal Insight</p>
-          <p className="text-xs text-slate-300 leading-relaxed">
+        <div className="bg-slate-800/30 rounded-lg p-2 border border-slate-700/30">
+          <p className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider mb-1">Signal Insight</p>
+          <p className="text-xs sm:text-xs text-slate-300 leading-relaxed">
             {(() => {
               const depthLabel = peakZone
                 ? peakZone.from < (maxDepth ?? 999) * 0.25
