@@ -267,8 +267,9 @@ export function Explorer() {
                 <div className="text-xs text-slate-400">Au threshold (ppm)</div>
                 <input
                   type="number"
-                  step="0.01"
+                  step="0.1"
                   min={0}
+                  placeholder="e.g. 0.5"
                   value={auThreshold ?? ''}
                   onChange={(e) => setAuThreshold(e.target.value === '' ? null : Number(e.target.value))}
                   className="w-full px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sm"
@@ -301,7 +302,11 @@ export function Explorer() {
                     onClick={() => { setAuThreshold(null); setMinDepthFilter(null); setTopN(null) }}
                     className="px-3 py-1 rounded bg-slate-700 text-sm text-slate-200"
                   >Reset</button>
-                  <div className="text-[11px] text-slate-400">{summariesLoading ? 'Loading summaries…' : ''}</div>
+                  <div className="text-[11px] text-slate-400">
+                    {summariesLoading
+                      ? 'Loading summaries…'
+                      : `Showing ${filteredDrillholes.length} / ${allDrillholes.length} drillholes`}
+                  </div>
                 </div>
               </CardContent>
             </Card>
