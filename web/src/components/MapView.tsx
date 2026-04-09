@@ -356,6 +356,29 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
     }
   }, [project?.lat, project?.lon, project?.zoom_default, project?.detail_level])
 
+  // Recenter map when a drillhole is selected
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !selectedDrillholeId) return
+
+    const hole = drillholes.find(h => h.drillhole_id === selectedDrillholeId || h.hole_id === selectedDrillholeId)
+    if (!hole) return
+    const coords = hole.geometry?.coordinates as [number, number] | undefined
+    if (!coords) return
+
+    const target: [number, number] = [coords[1], coords[0]]
+    const currentZoom = map.getZoom()
+    // reasonable zoom for inspection: not too close, not too far
+    const targetZoom = Math.max(12, Math.min(16, currentZoom < 13 ? 14 : Math.max(currentZoom, 15)))
+
+    try {
+      // prefer smooth animated flyTo when available
+      map.flyTo(target, targetZoom, { animate: true, duration: 1.0 })
+    } catch (e) {
+      try { map.setView(target, targetZoom, { animate: true }) } catch (e) { /* ignore */ }
+    }
+  }, [selectedDrillholeId, drillholes])
+
   if (loading) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-900 rounded-lg">
