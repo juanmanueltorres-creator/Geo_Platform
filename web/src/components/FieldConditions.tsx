@@ -153,6 +153,22 @@ export function FieldConditions({ project, onWeather, expanded = true, title }: 
             </div>
           </>
         )}
+        {/* Field Advisory */}
+        {!loading && !error && (
+          <div className="pt-2 mt-2 border-t border-white/10">
+            <div className="text-[12px] text-blue-100 font-semibold mb-1 text-center">Field Advisory</div>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {advisories.length === 0 ? (
+                <Badge color="amber-soft">Conditions normal</Badge>
+              ) : (
+                advisories.map((a, i) => (
+                  <Badge key={i} color="amber">{a}</Badge>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Footer: local time */}
         {!loading && !error && (
           <div className="pt-2 mt-1 border-t border-white/10 text-[12px] text-blue-200 text-center font-semibold">
