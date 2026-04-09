@@ -70,6 +70,7 @@ import { MapContainer, WMSTileLayer, Marker, Popup, GeoJSON, useMap } from 'reac
 import L from 'leaflet'
 import { LeafletScaleControl } from './LeafletScaleControl'
 import { FieldConditions } from './FieldConditions'
+import MapMeasurementTools from './MapMeasurementTools'
 import { api } from '@/lib/api'
 import type { Drillhole } from '@/types'
 import type { Weather } from './FieldConditions'
@@ -427,6 +428,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         <WeatherPanelOverlay project={project} onWeather={onWeather} />
       </div>
       <MapInstanceBridge mapRef={mapRef} />
+      <MapMeasurementTools mapRef={mapRef} />
       <FitBounds drillholes={drillholes} />
       <Recenter center={projectCenter} zoom={projectZoom} />
         {/* Project markers */}
