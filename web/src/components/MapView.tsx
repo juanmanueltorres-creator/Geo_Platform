@@ -794,7 +794,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         aria-hidden
         style={{
           position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-          bottom: 72, zIndex: 1400,
+          bottom: 50, zIndex: 1400,
           pointerEvents: 'none',
           background: 'rgba(2,6,23,0.78)', color: '#fff',
           padding: '6px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700,
