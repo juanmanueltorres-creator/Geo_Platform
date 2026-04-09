@@ -231,6 +231,8 @@ interface MapViewProps {
   onDrillholeSelect?: (drillhole: Drillhole) => void
   onDrillholesLoaded?: (drillholes: Drillhole[]) => void
   selectedDrillholeId?: string | null
+  /** Optional: externally-provided subset of drillholes to display */
+  visibleDrillholes?: Drillhole[] | null
   onLoadingChange?: (loading: boolean) => void
   weather?: Weather | null
   project?: Project | null
@@ -239,7 +241,7 @@ interface MapViewProps {
   onWeather?: (w: any) => void
 }
 
-export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillholeId, onLoadingChange, weather, project, projects = [], onProjectSelect, onWeather }: MapViewProps) {
+export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillholeId, visibleDrillholes, onLoadingChange, weather, project, projects = [], onProjectSelect, onWeather }: MapViewProps) {
   const [drillholes, setDrillholes] = useState<Drillhole[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -356,6 +358,10 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
     }
   }, [project?.lat, project?.lon, project?.zoom_default, project?.detail_level])
 
+  // If a filtered subset is provided by the parent, render that instead of the full list
+  const renderedDrillholes = visibleDrillholes ?? drillholes
+
+
   // Recenter map when a drillhole is selected
   useEffect(() => {
     const map = mapRef.current
@@ -452,7 +458,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       </div>
       <MapInstanceBridge mapRef={mapRef} />
       <MapMeasurementTools mapRef={mapRef} />
-      <FitBounds drillholes={drillholes} />
+      <FitBounds drillholes={renderedDrillholes} />
       <Recenter center={projectCenter} zoom={projectZoom} />
         {/* Project markers */}
         {renderProjectMarkers()}
@@ -491,7 +497,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         />
       )}
 
-      {drillholes.map(hole => {
+      {renderedDrillholes.map(hole => {
         const coords = hole.geometry?.coordinates as [number, number]
         if (!coords) return null
         const isSelected = hole.drillhole_id === selectedDrillholeId
@@ -656,7 +662,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       )}
 
       {/* Interaction hint — shown when no drillhole is selected */}
-      {!selectedDrillholeId && drillholes.length > 0 && (
+      {!selectedDrillholeId && renderedDrillholes.length > 0 && (
         <div
           style={{
             position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',

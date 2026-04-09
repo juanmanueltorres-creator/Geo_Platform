@@ -1,6 +1,6 @@
 
 import { DrillholeSummaryCard } from '@/components/DrillholeSummaryCard'
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Zap, Globe } from 'lucide-react'
 import { MapView } from '@/components/MapView'
 import type { Weather } from '@/components/FieldConditions'
@@ -8,8 +8,10 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { TopDrillholes } from '@/components/TopDrillholes'
 import { ExplorationRadar } from '@/components/ExplorationRadar'
 import { ProjectOverview } from '@/components/ProjectOverview'
-import type { Drillhole } from '@/types'
+import { api } from '@/lib/api'
+import type { Drillhole, DrillholeSummary } from '@/types'
 import { AssayChart } from '@/components/AssayChart'
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
 
 // --- AssayChartToggle: mobile-only expand/collapse ---
 function AssayChartToggle({ drillholeId, holeName }: { drillholeId: string, holeName: string }) {
@@ -45,6 +47,12 @@ export function Explorer() {
   const [selectedProject, setSelectedProject] = useState<any | null>(null)
   const [selectedDrillhole, setSelectedDrillhole] = useState<Drillhole | null>(null)
   const [allDrillholes, setAllDrillholes] = useState<Drillhole[]>([])
+  // Filtering state
+  const [auThreshold, setAuThreshold] = useState<number | null>(null)
+  const [minDepthFilter, setMinDepthFilter] = useState<number | null>(null)
+  const [topN, setTopN] = useState<number | null>(null)
+  const [summaries, setSummaries] = useState<Record<string, DrillholeSummary>>({})
+  const [summariesLoading, setSummariesLoading] = useState(false)
   // Warm-up banner state
   const [mapLoading, setMapLoading] = useState(true)
   const [showWarmup, setShowWarmup] = useState(false)
@@ -78,6 +86,54 @@ export function Explorer() {
     }).catch((e) => console.error('Dynamic import failed', e))
     return () => { mounted = false }
   }, [])
+
+  // Fetch summaries for drillholes (used by Au filter / ranking)
+  useEffect(() => {
+    let mounted = true
+    const fetchSummaries = async () => {
+      if (allDrillholes.length === 0) return
+      try {
+        setSummariesLoading(true)
+        const out: Record<string, DrillholeSummary> = {}
+        for (const dh of allDrillholes) {
+          try {
+            const s = await api.getDrillholeSummary(dh.drillhole_id)
+            if (!mounted) return
+            out[dh.drillhole_id] = s
+          } catch (err) {
+            // skip failures
+          }
+        }
+        if (mounted) setSummaries(out)
+      } finally {
+        if (mounted) setSummariesLoading(false)
+      }
+    }
+    fetchSummaries()
+    return () => { mounted = false }
+  }, [allDrillholes])
+
+  // Compute filtered drillholes derived from allDrillholes + summaries + filters
+  const filteredDrillholes = useMemo(() => {
+    let list = allDrillholes.slice()
+    if (minDepthFilter != null) {
+      list = list.filter(h => (h.max_depth ?? 0) >= minDepthFilter)
+    }
+    if (auThreshold != null) {
+      list = list.filter(h => {
+        const s = summaries[h.drillhole_id]
+        return s && (s.max_au ?? 0) >= auThreshold
+      })
+    }
+    if (topN != null) {
+      list = list.slice().sort((a, b) => (summaries[b.drillhole_id]?.max_au ?? 0) - (summaries[a.drillhole_id]?.max_au ?? 0)).slice(0, topN)
+    }
+    // ensure current selection is visible
+    if (selectedDrillhole && !list.some(h => h.drillhole_id === selectedDrillhole.drillhole_id)) {
+      list = [selectedDrillhole, ...list]
+    }
+    return list
+  }, [allDrillholes, summaries, auThreshold, minDepthFilter, topN, selectedDrillhole])
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-950 dark:text-slate-50">
@@ -166,6 +222,7 @@ export function Explorer() {
                 onDrillholeSelect={setSelectedDrillhole}
                 onDrillholesLoaded={setAllDrillholes}
                 selectedDrillholeId={selectedDrillhole?.drillhole_id ?? null}
+                visibleDrillholes={filteredDrillholes}
                 onLoadingChange={setMapLoading}
                 weather={(() => { console.log('[Explorer] passing weather to MapView:', weather); return weather })()}
                 project={selectedProject}
@@ -201,12 +258,60 @@ export function Explorer() {
           </div>
           {/* Sidebar: ExplorationRadar, TopDrillholes */}
           <div className="space-y-8">
+            {/* Filters panel */}
+            <Card className="border-slate-700">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Drillhole Filters</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="text-xs text-slate-400">Au threshold (ppm)</div>
+                <input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  value={auThreshold ?? ''}
+                  onChange={(e) => setAuThreshold(e.target.value === '' ? null : Number(e.target.value))}
+                  className="w-full px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sm"
+                />
+
+                <div className="text-xs text-slate-400">Min depth (m)</div>
+                <input
+                  type="number"
+                  step="1"
+                  min={0}
+                  value={minDepthFilter ?? ''}
+                  onChange={(e) => setMinDepthFilter(e.target.value === '' ? null : Number(e.target.value))}
+                  className="w-full px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sm"
+                />
+
+                <div className="text-xs text-slate-400">Top N (by max Au)</div>
+                <select
+                  value={topN ?? ''}
+                  onChange={(e) => setTopN(e.target.value === '' ? null : Number(e.target.value))}
+                  className="w-full px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sm"
+                >
+                  <option value="">All</option>
+                  <option value="5">Top 5</option>
+                  <option value="10">Top 10</option>
+                  <option value="20">Top 20</option>
+                </select>
+
+                <div className="flex items-center justify-between mt-2">
+                  <button
+                    onClick={() => { setAuThreshold(null); setMinDepthFilter(null); setTopN(null) }}
+                    className="px-3 py-1 rounded bg-slate-700 text-sm text-slate-200"
+                  >Reset</button>
+                  <div className="text-[11px] text-slate-400">{summariesLoading ? 'Loading summaries…' : ''}</div>
+                </div>
+              </CardContent>
+            </Card>
+
             <ExplorationRadar
-              drillholes={allDrillholes}
+              drillholes={filteredDrillholes}
               onSelectDrillhole={setSelectedDrillhole}
             />
             <TopDrillholes
-              drillholes={allDrillholes}
+              drillholes={filteredDrillholes}
               onSelectDrillhole={setSelectedDrillhole}
               selectedDrillholeId={selectedDrillhole?.drillhole_id ?? null}
             />
