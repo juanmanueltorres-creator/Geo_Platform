@@ -306,6 +306,9 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
 
   // Leaflet map instance reference so we can imperatively set view on project change
   const mapRef = useRef<L.Map | null>(null)
+  // Map-local coordinate bar refs (presentation-only, do NOT lift state)
+  const coordBarRef = useRef<HTMLDivElement | null>(null)
+  const copyTimerRef = useRef<number | null>(null)
 
   const fetchDrillholes = useCallback(async () => {
     try {
@@ -357,6 +360,109 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       // ignore map errors in exotic environments
     }
   }, [project?.lat, project?.lon, project?.zoom_default, project?.detail_level])
+
+  // Map-local coordinate UI: show live cursor coords and copy-on-click for empty-map clicks.
+  // All state and DOM updates are local here to avoid any parent re-renders.
+  useEffect(() => {
+    let mounted = true
+    let retryTimer: number | null = null
+    let cleanup: (() => void) | null = null
+
+    const attach = () => {
+      const map = mapRef.current
+      if (!map) {
+        // Map instance may not be ready yet; retry briefly (small, bounded attempts)
+        retryTimer = window.setTimeout(() => { if (mounted) attach() }, 60)
+        return
+      }
+
+      const coordEl = coordBarRef.current
+      const updateCoord = (lat: number, lng: number) => {
+        if (!coordEl) return
+        coordEl.textContent = `Lat ${lat.toFixed(5)} | Lon ${lng.toFixed(5)}`
+      }
+      const clearCoord = () => { if (coordEl) coordEl.textContent = '' }
+
+      const onMouseMove = (e: L.LeafletMouseEvent) => {
+        updateCoord(e.latlng.lat, e.latlng.lng)
+      }
+      const onMouseOut = () => {
+        clearCoord()
+      }
+
+      const onClick = async (e: L.LeafletMouseEvent) => {
+        try {
+          if (!e || !e.originalEvent) return
+          const target = (e.originalEvent.target as HTMLElement) || null
+          // Ignore clicks on markers, controls, popups, buttons, inputs
+          if (target && target.closest && target.closest('.leaflet-marker-icon, .leaflet-control, .leaflet-popup, .leaflet-control-container, button, input')) {
+            return
+          }
+        } catch (_) {
+          return
+        }
+
+        // If measurement mode appears active (measurement UI or labels exist), do not copy
+        if (document.querySelector('button[title="Exit measurement mode"], .measure-label')) return
+
+        const lat = e.latlng.lat
+        const lng = e.latlng.lng
+        const latStr = lat.toFixed(5)
+        const lngStr = lng.toFixed(5)
+        const payload = `${latStr}, ${lngStr}`
+
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(payload)
+          } else {
+            const ta = document.createElement('textarea')
+            ta.value = payload
+            ta.style.position = 'fixed'
+            ta.style.left = '-9999px'
+            document.body.appendChild(ta)
+            ta.select()
+            document.execCommand('copy')
+            document.body.removeChild(ta)
+          }
+
+          // show subtle temporary feedback in the same coord bar
+          if (coordEl) {
+            const prev = coordEl.textContent || ''
+            coordEl.textContent = `Copied: ${payload}`
+            if (copyTimerRef.current) window.clearTimeout(copyTimerRef.current)
+            copyTimerRef.current = window.setTimeout(() => {
+              if (coordEl) coordEl.textContent = prev
+              copyTimerRef.current = null
+            }, 1500)
+          }
+        } catch (_) {
+          // silent failure — do not disturb map interaction
+        }
+      }
+
+      map.on('mousemove', onMouseMove)
+      map.on('mouseout', onMouseOut)
+      map.on('click', onClick)
+
+      cleanup = () => {
+        map.off('mousemove', onMouseMove)
+        map.off('mouseout', onMouseOut)
+        map.off('click', onClick)
+      }
+    }
+
+    attach()
+
+    return () => {
+      mounted = false
+      if (retryTimer) window.clearTimeout(retryTimer)
+      if (cleanup) cleanup()
+      if (copyTimerRef.current) {
+        window.clearTimeout(copyTimerRef.current)
+        copyTimerRef.current = null
+      }
+    }
+  }, [mapRef])
 
   // If a filtered subset is provided by the parent, render that instead of the full list
   const renderedDrillholes = visibleDrillholes ?? drillholes
@@ -681,6 +787,20 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
           </span>
         </div>
       )}
+
+      {/* Cursor coordinate bar (map-local, presentation-only, non-interactive) */}
+      <div
+        ref={coordBarRef}
+        aria-hidden
+        style={{
+          position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+          bottom: 72, zIndex: 1400,
+          pointerEvents: 'none',
+          background: 'rgba(2,6,23,0.78)', color: '#fff',
+          padding: '6px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+          minWidth: 220, textAlign: 'center', boxShadow: '0 6px 18px rgba(0,0,0,0.18)'
+        }}
+      />
 
       {/* Collapsible layer panel */}
       <div style={{ position: 'absolute', top: 50, right: 10, zIndex: 1301 }}>
