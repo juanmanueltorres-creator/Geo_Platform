@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Thermometer, Wind, CloudRain, Cloud, Droplet, Sun } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card'
+import { Badge } from './ui/Badge'
 import { api } from '@/lib/api'
 import { msToKmh, degToCardinal } from '@/lib/windUtils'
 
@@ -48,6 +49,35 @@ export function FieldConditions({ project, onWeather, expanded = true, title }: 
 
   const fmt = (v: number | null | undefined, unit = '') =>
     v === null || v === undefined ? '—' : `${Number(v).toFixed(1)}${unit}`
+
+  // Advisory rule engine (simple, deterministic, readable)
+  const advisories: string[] = (() => {
+    const out: string[] = []
+    if (!cur) return out
+
+    const temp = cur?.temperature_c
+    const windMs = cur?.wind_speed_ms
+    const windKmh = windMs != null && !isNaN(windMs) ? msToKmh(Number(windMs)) : null
+    const humidity = cur?.humidity_percent
+
+    // Wind rule: high wind advisory if > 40 km/h
+    if (windKmh != null && windKmh > 40) out.push('High wind advisory')
+
+    // Temperature rules
+    if (temp != null && !isNaN(temp)) {
+      if (Number(temp) < 0) out.push('Freezing conditions')
+      else if (Number(temp) > 35) out.push('High temperature')
+    }
+
+    // Humidity rule
+    if (humidity != null && !isNaN(humidity) && Number(humidity) > 85) out.push('High humidity')
+
+    // Visibility (optional): check common fields if present
+    const visibility = cur?.visibility ?? cur?.visibility_km ?? null
+    if (visibility != null && !isNaN(visibility) && Number(visibility) < 2) out.push('Reduced visibility')
+
+    return out
+  })()
 
   return (
     <Card className="bg-[rgba(23,37,84,0.48)] border border-white/20 shadow-[0_6px_24px_0_rgba(0,0,0,0.18)] rounded-lg p-3 px-4 backdrop-blur-xl text-white">
