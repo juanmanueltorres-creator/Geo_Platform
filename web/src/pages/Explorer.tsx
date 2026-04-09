@@ -114,6 +114,8 @@ export function Explorer() {
   }, [allDrillholes])
 
   // Compute filtered drillholes derived from allDrillholes + summaries + filters
+  // NOTE: keep this stable w.r.t. `selectedDrillhole` so sidebar widgets
+  // that depend on `drillholes` don't re-run their effects when selection changes.
   const filteredDrillholes = useMemo(() => {
     let list = allDrillholes.slice()
     if (minDepthFilter != null) {
@@ -128,12 +130,17 @@ export function Explorer() {
     if (topN != null) {
       list = list.slice().sort((a, b) => (summaries[b.drillhole_id]?.max_au ?? 0) - (summaries[a.drillhole_id]?.max_au ?? 0)).slice(0, topN)
     }
-    // ensure current selection is visible
-    if (selectedDrillhole && !list.some(h => h.drillhole_id === selectedDrillhole.drillhole_id)) {
-      list = [selectedDrillhole, ...list]
-    }
     return list
-  }, [allDrillholes, summaries, auThreshold, minDepthFilter, topN, selectedDrillhole])
+  }, [allDrillholes, summaries, auThreshold, minDepthFilter, topN])
+
+  // Provide a separate list for the map that will include the currently-selected
+  // drillhole if it's currently filtered out. This keeps `filteredDrillholes`
+  // identity stable for sidebars while ensuring the map still shows the selection.
+  const visibleDrillholes = useMemo(() => {
+    if (!selectedDrillhole) return filteredDrillholes
+    if (filteredDrillholes.some(h => h.drillhole_id === selectedDrillhole.drillhole_id)) return filteredDrillholes
+    return [selectedDrillhole, ...filteredDrillholes]
+  }, [filteredDrillholes, selectedDrillhole])
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-950 dark:text-slate-50">
@@ -222,7 +229,7 @@ export function Explorer() {
                 onDrillholeSelect={setSelectedDrillhole}
                 onDrillholesLoaded={setAllDrillholes}
                 selectedDrillholeId={selectedDrillhole?.drillhole_id ?? null}
-                visibleDrillholes={filteredDrillholes}
+                visibleDrillholes={visibleDrillholes}
                 onLoadingChange={setMapLoading}
                 weather={(() => { console.log('[Explorer] passing weather to MapView:', weather); return weather })()}
                 project={selectedProject}
