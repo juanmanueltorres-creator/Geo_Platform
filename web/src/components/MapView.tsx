@@ -339,6 +339,10 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
 
   const [layerPanelOpen, setLayerPanelOpen] = useState(false)
   const [isMobileFs, setIsMobileFs] = useState(false)
+  const [legendOpen, setLegendOpen] = useState(false)
+  const GEOLOGY_WMS_BASE = 'https://sigam.segemar.gov.ar/geoserver/ows'
+  const GEOLOGY_WMS_LAYER = 'GeoFront500:Mapa_frontera_unidad_geologica_500K'
+  const GEOLOGY_LEGEND_URL = `${GEOLOGY_WMS_BASE}?service=WMS&request=GetLegendGraphic&format=image/png&version=1.1.1&transparent=false&LEGEND_OPTIONS=forceLabels:on&layer=${encodeURIComponent(GEOLOGY_WMS_LAYER)}`
 
   // Leaflet map instance reference so we can imperatively set view on project change
   const mapRef = useRef<L.Map | null>(null)
@@ -645,6 +649,84 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
           ))}
         </div>
       </div>
+      {/* Geology legend (collapsed) */}
+      <div style={{ position: 'absolute', top: 190, left: 12, zIndex: 1400 }}>
+        <button
+          onClick={() => setLegendOpen(v => !v)}
+          aria-label={legendOpen ? 'Hide geology legend' : 'Show geology legend'}
+          title={legendOpen ? 'Hide geology legend' : 'Show geology legend'}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(148,163,184,0.3)',
+            borderRadius: '8px 8px 0 0', padding: '5px 9px', cursor: 'pointer',
+            color: '#e2e8f0', fontSize: 11, fontWeight: 600,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(30,41,59,0.98)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(15,23,42,0.92)')}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 5h18M3 12h18M3 19h18" />
+          </svg>
+          Geology Legend
+        </button>
+        {legendOpen && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 1300, marginTop: -1, border: '1px solid rgba(148,163,184,0.3)', background: 'rgba(15, 23, 42, 0.96)', borderRadius: '0 0 8px 8px', padding: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.4)', color: '#e2e8f0', minWidth: 180, maxHeight: 240, overflowY: 'auto' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: 1 }}>Geology Legend</div>
+            <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 18, height: 12, background: '#f6e7c3', borderRadius: 2, border: '1px solid rgba(255,255,255,0.06)' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>Qal</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af' }}>Quaternary alluvium</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 18, height: 12, background: '#c68a3d', borderRadius: 2 }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>OMiv</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af' }}>Volcanic / volcaniclastic unit</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 18, height: 12, background: '#e9d6ad', borderRadius: 2 }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>PIQs</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af' }}>Ignimbrite / pyroclastic unit</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 18, height: 12, background: '#d1d5d9', borderRadius: 2 }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>PTrg</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af' }}>Granite / intrusive unit</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '100%', height: 2, background: '#000', borderRadius: 1 }} />
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>Faults</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '100%', height: 2, background: '#6b7280', borderRadius: 1 }} />
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>Rutas</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* WeatherPanelOverlay centrado arriba */}
       <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', zIndex: 1300 }}>
         <WeatherPanelOverlay project={project} onWeather={onWeather} />
