@@ -297,24 +297,9 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   const [showFaultsWMS, setShowFaultsWMS] = useState(true)
   const [wmsOpacity, setWmsOpacity] = useState(0.35)
   const [showHillshade, setShowHillshade] = useState(false)
-  const [showDepartamentos, setShowDepartamentos] = useState(false)
-  const [departamentosGeoJSON, setDepartamentosGeoJSON] = useState<any | null>(null)
 
   const toggleLayer = useCallback((key: GeologyLayerKey) => {
     setVisibleLayers(prev => ({ ...prev, [key]: !prev[key] }))
-  }, [])
-
-  // Load local GeoJSON for San Juan departamentos (served from `public/data/`)
-  useEffect(() => {
-    let mounted = true
-    fetch('/data/san_juan_departamentos.geojson')
-      .then(r => {
-        if (!r.ok) throw new Error('Failed to fetch departamentos geojson')
-        return r.json()
-      })
-      .then(j => { if (mounted) setDepartamentosGeoJSON(j) })
-      .catch(err => { if (mounted) console.warn('Could not load departamentos geojson', err) })
-    return () => { mounted = false }
   }, [])
 
   const [layerPanelOpen, setLayerPanelOpen] = useState(false)
@@ -753,25 +738,6 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         />
       )}
 
-      {/* Departamentos (San Juan) — local GeoJSON overlay, transparent fill + border + tooltip */}
-      {showDepartamentos && departamentosGeoJSON && (
-        <GeoJSON
-          key="departamentos"
-          data={departamentosGeoJSON}
-          style={() => ({
-            color: '#065f46',
-            weight: 2,
-            opacity: 0.9,
-            fillColor: '#065f46',
-            fillOpacity: 0.06,
-          })}
-          onEachFeature={(feature, layer) => {
-            const name = feature?.properties?.name ?? feature?.properties?.NOMBRE ?? 'Departamento'
-            layer.bindTooltip(`<strong>${name}</strong>`, { sticky: true })
-          }}
-        />
-      )}
-
       {visibleLayers.glaciers && glaciersGeoJSON.features.length > 0 && (
         <GeoJSON
           key="glaciers"
@@ -972,12 +938,6 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
                     Capture Map
                   </button>
                 </div>
-
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, color: '#e2e8f0', padding: '6px 0' }}>
-                  <input type="checkbox" checked={showDepartamentos} onChange={() => setShowDepartamentos(v => !v)} style={{ accentColor: '#059669', width: 14, height: 14 }} />
-                  <span style={{ width: 10, height: 10, borderRadius: 2, background: '#059669', opacity: 0.85, display: 'inline-block' }} />
-                  Departamentos (San Juan)
-                </label>
 
             <div style={{ borderTop: '1px solid rgba(148,163,184,0.3)', margin: '2px 0' }} />
 
