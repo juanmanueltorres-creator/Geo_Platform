@@ -342,7 +342,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   const [legendOpen, setLegendOpen] = useState(false)
   const GEOLOGY_WMS_BASE = 'https://sigam.segemar.gov.ar/geoserver/ows'
   const GEOLOGY_WMS_LAYER = 'GeoFront500:Mapa_frontera_unidad_geologica_500K'
-  const GEOLOGY_LEGEND_URL = `${GEOLOGY_WMS_BASE}?service=WMS&request=GetLegendGraphic&format=image/png&version=1.1.1&transparent=false&LEGEND_OPTIONS=forceLabels:on&layer=${encodeURIComponent(GEOLOGY_WMS_LAYER)}`
+  // manual legend UI used instead of WMS GetLegendGraphic; constant removed
 
   // Leaflet map instance reference so we can imperatively set view on project change
   const mapRef = useRef<L.Map | null>(null)
@@ -755,9 +755,9 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       {/* SEGEMAR WMS — 1:500K surface geology (border zone map) */}
       {showGeologyWMS && (
         <WMSTileLayer
-          url="https://sigam.segemar.gov.ar/geoserver/ows"
+          url={GEOLOGY_WMS_BASE}
           params={{
-            layers: 'GeoFront500:Mapa_frontera_unidad_geologica_500K',
+            layers: GEOLOGY_WMS_LAYER,
             format: 'image/png',
             transparent: true,
             version: '1.1.1',
@@ -769,7 +769,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         // Note: this WMS returns raster tiles; color cannot be recolored client-side.
         // To render faults in a different color the WMS must expose a server-side style (use `styles` param).
         <WMSTileLayer
-          url="https://sigam.segemar.gov.ar/geoserver/ows"
+          url={GEOLOGY_WMS_BASE}
           params={{
             layers: 'GeoFront500:Mapa_frontera_fallas_500K',
             format: 'image/png',
