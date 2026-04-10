@@ -9,6 +9,7 @@ interface DrillholeSummaryProps {
   holeName: string
   maxDepth?: number
   peakZone?: PeakZone | null
+  isMobile?: boolean
 }
 
 type GradeClass = 'HIGH GRADE' | 'ANOMALOUS' | 'BACKGROUND'
@@ -45,7 +46,7 @@ const LITH_COLORS: Record<string, string> = {
   DIO: 'bg-blue-500',
 }
 
-export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth, peakZone }: DrillholeSummaryProps) {
+export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth, peakZone, isMobile }: DrillholeSummaryProps) {
   const [summary, setSummary] = useState<DrillholeSummary | null>(null)
   const [geology, setGeology] = useState<GeologySummary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -280,14 +281,17 @@ export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth, peakZone
           >
             Export JSON
           </button>
-          <button
-            onClick={exportCSV}
-            disabled={!hasAssays}
-            className="px-3 py-1 bg-slate-700 text-white rounded text-xs font-semibold disabled:opacity-50"
-            title={!hasAssays ? 'No assays available' : 'Download assays CSV'}
-          >
-            Export CSV
-          </button>
+
+          {!isMobile && (
+            <button
+              onClick={exportCSV}
+              disabled={!hasAssays}
+              className="px-3 py-1 bg-slate-700 text-white rounded text-xs font-semibold disabled:opacity-50"
+              title={!hasAssays ? 'No assays available' : 'Download assays CSV'}
+            >
+              Export CSV
+            </button>
+          )}
         </div>
 
         {/* Geological context — lithology + alteration from geology-summary */}

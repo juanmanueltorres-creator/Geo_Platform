@@ -13,10 +13,11 @@ type Project = {
 }
 
 // --- WeatherPanelOverlay: minimal collapsible weather panel ---
-function WeatherPanelOverlay({ project, onWeather }: { project?: any, onWeather?: (w: any) => void }) {
+function WeatherPanelOverlay({ project, onWeather, isMobile }: { project?: any, onWeather?: (w: any) => void, isMobile?: boolean }) {
   const [open, setOpen] = useState(false)
+  const compact = !!isMobile
   return (
-    <div style={{ width: open ? 170 : 'auto', transition: 'width 0.18s' }}>
+    <div style={{ width: open ? (compact ? 120 : 170) : 'auto', transition: 'width 0.18s' }}>
       {!open && (
         <button
           aria-label="Show weather panel"
@@ -26,10 +27,10 @@ function WeatherPanelOverlay({ project, onWeather }: { project?: any, onWeather?
             background: 'rgba(15,23,42,0.92)',
             border: '1px solid rgba(148,163,184,0.3)',
             borderRadius: 6,
-            padding: '5px 9px',
+            padding: compact ? '4px 7px' : '5px 9px',
             cursor: 'pointer',
             color: '#e2e8f0',
-            fontSize: 13,
+            fontSize: compact ? 12 : 13,
             fontWeight: 600,
             boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
             justifyContent: 'flex-start',
@@ -40,8 +41,8 @@ function WeatherPanelOverlay({ project, onWeather }: { project?: any, onWeather?
           onMouseLeave={e => (e.currentTarget.style.background = 'rgba(15,23,42,0.92)')}
           onClick={() => setOpen(true)}
         >
-          <span role="img" aria-label="weather" style={{ fontSize: 17, color: '#f59e0b', fontWeight: 700 }}>☀️</span>
-          <span style={{ color: '#e2e8f0', fontWeight: 600 }}>Weather</span>
+          <span role="img" aria-label="weather" style={{ fontSize: compact ? 15 : 17, color: '#f59e0b', fontWeight: 700 }}>☀️</span>
+          {!compact && <span style={{ color: '#e2e8f0', fontWeight: 600 }}>Weather</span>}
         </button>
       )}
       {open && (
@@ -239,12 +240,34 @@ interface MapViewProps {
   projects?: Project[]
   onProjectSelect?: (project: Project) => void
   onWeather?: (w: any) => void
+  onIsMobileChange?: (isMobile: boolean) => void
 }
 
-export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillholeId, visibleDrillholes, onLoadingChange, weather, project, projects = [], onProjectSelect, onWeather }: MapViewProps) {
+export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillholeId, visibleDrillholes, onLoadingChange, weather, project, projects = [], onProjectSelect, onWeather, onIsMobileChange }: MapViewProps) {
   const [drillholes, setDrillholes] = useState<Drillhole[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' && window.innerWidth < 768)
+
+  useEffect(() => {
+    onIsMobileChange?.(isMobile)
+  }, [isMobile, onIsMobileChange])
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(typeof window !== 'undefined' && window.innerWidth < 768)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', handleResize)
+      window.addEventListener('orientationchange', handleResize)
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', handleResize)
+        window.removeEventListener('orientationchange', handleResize)
+      }
+    }
+  }, [])
   
   // Render all project markers, highlight the selected one
   function renderProjectMarkers() {
@@ -299,10 +322,10 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   const [showHillshade, setShowHillshade] = useState(false)
   // Departamentos overlay (San Juan) — thin boundary-only lines, no fill.
   // Place a clean GeoJSON file at `public/data/san_juan_departamentos.geojson`.
-  const [showDepartamentos, setShowDepartamentos] = useState(false)
+  const [showDepartamentos, setShowDepartamentos] = useState(true)
   const [departamentosGeoJSON, setDepartamentosGeoJSON] = useState<any | null>(null)
   // Rutas overlay (San Juan) — road network lines from `public/data/san_juan_rutas.geojson`.
-  const [showRutas, setShowRutas] = useState(false)
+  const [showRutas, setShowRutas] = useState(true)
   const [rutasGeoJSON, setRutasGeoJSON] = useState<any | null>(null)
 
   const toggleLayer = useCallback((key: GeologyLayerKey) => {
@@ -621,36 +644,39 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
     <MapContainer
       center={projectCenter}
       zoom={projectZoom}
-      style={{ width: '100%', height: '100%', borderRadius: '0.5rem', position: 'relative' }}
+      style={{ width: '100%', height: isMobile ? '100vh' : '100%', borderRadius: '0.5rem', position: 'relative' }}
       className="z-0"
     >
-      {/* Right-side control stack: basemap, Layers */}
-      <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 1200, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'stretch', minWidth: 120 }}>
-        {/* Basemap selector */}
-        <div
-          style={{
-            display: 'flex', gap: 4, background: 'rgba(255,255,255,0.9)',
-            borderRadius: 6, padding: 3, boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-          }}
-        >
-          {(Object.keys(TILE_LAYERS) as TileLayerKey[]).map(key => (
-            <button
-              key={key}
-              onClick={() => setTileLayer(key)}
-              style={{
-                padding: '4px 10px', fontSize: 12, fontWeight: 600,
-                border: 'none', borderRadius: 4, cursor: 'pointer',
-                background: tileLayer === key ? '#f59e0b' : 'transparent',
-                color: tileLayer === key ? '#fff' : '#333',
-              }}
-            >
-              {TILE_LAYERS[key].label}
-            </button>
-          ))}
+      {/* Right-side control stack: basemap, Layers (hidden on mobile) */}
+      {!isMobile && (
+        <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 1200, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'stretch', minWidth: 120 }}>
+          {/* Basemap selector */}
+          <div
+            style={{
+              display: 'flex', gap: 4, background: 'rgba(255,255,255,0.9)',
+              borderRadius: 6, padding: 3, boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            }}
+          >
+            {(Object.keys(TILE_LAYERS) as TileLayerKey[]).map(key => (
+              <button
+                key={key}
+                onClick={() => setTileLayer(key)}
+                style={{
+                  padding: '4px 10px', fontSize: 12, fontWeight: 600,
+                  border: 'none', borderRadius: 4, cursor: 'pointer',
+                  background: tileLayer === key ? '#f59e0b' : 'transparent',
+                  color: tileLayer === key ? '#fff' : '#333',
+                }}
+              >
+                {TILE_LAYERS[key].label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-      {/* Geology legend (collapsed) */}
-      <div style={{ position: 'absolute', top: 190, left: 12, zIndex: 1400 }}>
+      )}
+      {/* Geology legend (collapsed) — hidden on mobile */}
+      {!isMobile && (
+        <div style={{ position: 'absolute', top: 190, left: 12, zIndex: 1400 }}>
         <button
           onClick={() => setLegendOpen(v => !v)}
           aria-label={legendOpen ? 'Hide geology legend' : 'Show geology legend'}
@@ -726,13 +752,14 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
           </div>
         )}
       </div>
+      )}
 
       {/* WeatherPanelOverlay centrado arriba */}
       <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', zIndex: 1300 }}>
-        <WeatherPanelOverlay project={project} onWeather={onWeather} />
+        <WeatherPanelOverlay project={project} onWeather={onWeather} isMobile={isMobile} />
       </div>
       <MapInstanceBridge mapRef={mapRef} />
-      <MapMeasurementTools mapRef={mapRef} />
+      {!isMobile && <MapMeasurementTools mapRef={mapRef} />}
       <FitBounds drillholes={renderedDrillholes} />
       <Recenter center={projectCenter} zoom={projectZoom} />
         {/* Project markers */}
@@ -748,9 +775,9 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
             opacity={0.3}
           />
       )}
-      {/* Leaflet metric scale control (bottom-right, unobtrusive) */}
-      <LeafletScaleControl />
-      <FullscreenToggle onMobileToggle={() => setIsMobileFs(v => !v)} isMobileFs={isMobileFs} />
+      {/* Leaflet metric scale control (bottom-right, unobtrusive) - hide on mobile */}
+      {!isMobile && <LeafletScaleControl />}
+      {!isMobile && <FullscreenToggle onMobileToggle={() => setIsMobileFs(v => !v)} isMobileFs={isMobileFs} />}
 
       {/* SEGEMAR WMS — 1:500K surface geology (border zone map) */}
       {showGeologyWMS && (
@@ -1005,7 +1032,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       )}
 
       {/* Interaction hint — shown when no drillhole is selected */}
-      {!selectedDrillholeId && renderedDrillholes.length > 0 && (
+      {!isMobile && !selectedDrillholeId && renderedDrillholes.length > 0 && (
         <div
           style={{
             position: 'absolute', bottom: 50, left: '50%', transform: 'translateX(-50%)',
@@ -1026,6 +1053,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       )}
 
       {/* Cursor coordinate bar (map-local, presentation-only, non-interactive) */}
+      {!isMobile && (
       <div
         ref={coordBarRef}
         aria-hidden
@@ -1038,8 +1066,10 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
           minWidth: 220, textAlign: 'center', boxShadow: '0 6px 18px rgba(0,0,0,0.18)'
         }}
       />
+      )}
 
-      {/* Collapsible layer panel */}
+      {/* Collapsible layer panel (hidden on mobile) */}
+      {!isMobile && (
       <div style={{ position: 'absolute', top: 50, right: 10, zIndex: 1301 }}>
         {/* Toggle button — always visible */}
         <button
@@ -1163,6 +1193,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
           </div>
         )}
       </div>
+      )}
     </MapContainer>
     </div>
   )

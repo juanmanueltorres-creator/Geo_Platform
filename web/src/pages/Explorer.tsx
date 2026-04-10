@@ -45,6 +45,7 @@ export function Explorer() {
   const [weather, setWeather] = useState<Weather | null>(null)
   // Weather handler for FieldConditions
   const handleWeather = useCallback((w: Weather | null) => setWeather(w), [])
+  const [isMobileFromMap, setIsMobileFromMap] = useState<boolean>(false)
   const [projects, setProjects] = useState<any[]>([])
   const [selectedProject, setSelectedProject] = useState<any | null>(null)
   const [selectedDrillhole, setSelectedDrillhole] = useState<Drillhole | null>(null)
@@ -335,6 +336,7 @@ export function Explorer() {
                 projects={shownProjects}
                 onProjectSelect={setSelectedProject}
                 onWeather={handleWeather}
+                onIsMobileChange={setIsMobileFromMap}
               />
             </div>
 
@@ -346,6 +348,7 @@ export function Explorer() {
                     drillholeId={selectedDrillhole.drillhole_id}
                     holeName={selectedDrillhole.drillhole}
                     maxDepth={selectedDrillhole.max_depth}
+                    isMobile={isMobileFromMap}
                   />
                 </div>
                 <div
