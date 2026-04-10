@@ -319,10 +319,7 @@ export function Explorer() {
             <div
               className="relative mt-2"
               style={{
-                height: '800px',
-                ...(typeof window !== 'undefined' && window.innerWidth < 640
-                  ? { height: '400px' } // Mobile: shorter map
-                  : {}),
+                minHeight: isMobileFromMap ? '100dvh' : '800px',
               }}
             >
               <MapView

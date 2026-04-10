@@ -637,43 +637,60 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
 
   console.log('[MapView] received weather prop:', weather);
   return (
-    <div style={isMobileFs
+    <div style={(isMobile || isMobileFs)
       ? { position: 'fixed', inset: 0, zIndex: 9999 }
       : { width: '100%', height: '100%', position: 'relative' }
     }>
     <MapContainer
       center={projectCenter}
       zoom={projectZoom}
-      style={{ width: '100%', height: isMobile ? '100vh' : '100%', borderRadius: '0.5rem', position: 'relative' }}
+      style={{ width: '100%', height: isMobile ? '100dvh' : '100%', borderRadius: '0.5rem', position: 'relative' }}
       className="z-0"
     >
-      {/* Right-side control stack: basemap, Layers (hidden on mobile) */}
-      {!isMobile && (
-        <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 1200, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'stretch', minWidth: 120 }}>
-          {/* Basemap selector */}
-          <div
-            style={{
-              display: 'flex', gap: 4, background: 'rgba(255,255,255,0.9)',
-              borderRadius: 6, padding: 3, boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-            }}
-          >
-            {(Object.keys(TILE_LAYERS) as TileLayerKey[]).map(key => (
-              <button
-                key={key}
-                onClick={() => setTileLayer(key)}
-                style={{
-                  padding: '4px 10px', fontSize: 12, fontWeight: 600,
-                  border: 'none', borderRadius: 4, cursor: 'pointer',
-                  background: tileLayer === key ? '#f59e0b' : 'transparent',
-                  color: tileLayer === key ? '#fff' : '#333',
-                }}
-              >
-                {TILE_LAYERS[key].label}
-              </button>
-            ))}
-          </div>
+      {/* Basemap selector — anchored top-right; on mobile stays visible and fixed */}
+      <div style={{
+        position: 'absolute',
+        top: isMobile ? 8 : 10,
+        right: isMobile ? 8 : 10,
+        zIndex: isMobile ? 1400 : 1200,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        alignItems: 'stretch',
+        minWidth: isMobile ? 96 : 120,
+      }}>
+        <div
+          style={{
+            display: 'flex', gap: 4, background: 'rgba(255,255,255,0.9)',
+            borderRadius: 6, padding: 3, boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+          }}
+        >
+          {(Object.keys(TILE_LAYERS) as TileLayerKey[]).map(key => (
+            <button
+              key={key}
+              onClick={() => setTileLayer(key)}
+              style={{
+                padding: isMobile ? '5px 6px' : '4px 10px',
+                fontSize: isMobile ? 11 : 12,
+                minWidth: isMobile ? 44 : undefined,
+                fontWeight: 600,
+                border: 'none',
+                borderRadius: isMobile ? 6 : 4,
+                cursor: 'pointer',
+                background: tileLayer === key ? '#f59e0b' : 'transparent',
+                color: tileLayer === key ? '#fff' : '#333',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {isMobile
+                ? (key === 'esri' ? 'Sat' : key === 'terrain' ? 'Ter' : 'Str')
+                : TILE_LAYERS[key].label}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
       {/* Geology legend (collapsed) — hidden on mobile */}
       {!isMobile && (
         <div style={{ position: 'absolute', top: 190, left: 12, zIndex: 1400 }}>
@@ -754,8 +771,8 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       </div>
       )}
 
-      {/* WeatherPanelOverlay centrado arriba */}
-      <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', zIndex: 1300 }}>
+      {/* WeatherPanelOverlay centered at top (moved down on mobile to avoid basemap button) */}
+      <div style={{ position: 'absolute', top: isMobile ? 56 : 10, left: '50%', transform: 'translateX(-50%)', zIndex: 1300 }}>
         <WeatherPanelOverlay project={project} onWeather={onWeather} isMobile={isMobile} />
       </div>
       <MapInstanceBridge mapRef={mapRef} />
