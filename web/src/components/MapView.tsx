@@ -771,8 +771,8 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       {!selectedDrillholeId && renderedDrillholes.length > 0 && (
         <div
           style={{
-            position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
-            zIndex: 1000, background: 'rgba(15, 23, 42, 0.88)',
+            position: 'absolute', bottom: 50, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 1400, background: 'rgba(15, 23, 42, 0.88)',
             borderRadius: 8, padding: '6px 14px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
             display: 'flex', alignItems: 'center', gap: 8,
@@ -794,7 +794,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         aria-hidden
         style={{
           position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-          bottom: 50, zIndex: 1400,
+          bottom: 12, zIndex: 1000,
           pointerEvents: 'none',
           background: 'rgba(2,6,23,0.78)', color: '#fff',
           padding: '6px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700,
