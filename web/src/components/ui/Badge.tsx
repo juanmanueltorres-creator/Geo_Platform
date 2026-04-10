@@ -10,7 +10,10 @@ export function Badge({ children, color = 'amber', className = '', style = {} }:
     colorClass = 'bg-slate-700 text-white border-slate-500/60';
   }
   return (
-    <span className={`inline-block rounded px-2 py-0.5 border font-semibold ${colorClass} ${className}`} style={style}>
+    <span
+      className={`inline-block rounded-md px-2 py-[2px] border font-semibold text-[11px] shadow-sm tracking-tight align-middle select-none transition-all duration-150 ${colorClass} ${className}`}
+      style={{ lineHeight: 1.1, letterSpacing: 0.1, ...style }}
+    >
       {children}
     </span>
   );
