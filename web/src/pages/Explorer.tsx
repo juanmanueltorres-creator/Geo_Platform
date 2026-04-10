@@ -8,6 +8,8 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { TopDrillholes } from '@/components/TopDrillholes'
 import { ExplorationRadar } from '@/components/ExplorationRadar'
 import { ProjectOverview } from '@/components/ProjectOverview'
+import ProjectFilters from '@/components/ProjectFilters'
+import { rankProject } from '@/lib/ranking'
 import { api } from '@/lib/api'
 import type { Drillhole, DrillholeSummary } from '@/types'
 import { AssayChart } from '@/components/AssayChart'
@@ -52,6 +54,18 @@ export function Explorer() {
   const [minDepthFilter, setMinDepthFilter] = useState<number | null>(null)
   const [topN, setTopN] = useState<number | null>(null)
   const [summaries, setSummaries] = useState<Record<string, DrillholeSummary>>({})
+  // Project-level filters (kept in Explorer)
+  const [projectFilters, setProjectFilters] = useState<{
+    commodities: string[]
+    stage: string
+    priority: '' | 'HIGH' | 'MEDIUM' | 'LOW'
+    region: string
+  }>({
+    commodities: [],
+    stage: '',
+    priority: '',
+    region: ''
+  })
   const [summariesLoading, setSummariesLoading] = useState(false)
   // Warm-up banner state
   const [mapLoading, setMapLoading] = useState(true)
@@ -86,6 +100,90 @@ export function Explorer() {
     }).catch((e) => console.error('Dynamic import failed', e))
     return () => { mounted = false }
   }, [])
+  
+  // Project filter options derived from loaded projects
+  const projectOptions = useMemo(() => {
+    const commoditiesSet = new Set<string>()
+    const stagesSet = new Set<string>()
+    const regionsSet = new Set<string>()
+    projects.forEach((p: any) => {
+      if (p.commodity) {
+        String(p.commodity).split(/[\s,\/\-]+/).map((s: string) => s.trim()).filter(Boolean).forEach((t: string) => commoditiesSet.add(t))
+      }
+      if (p.stage) stagesSet.add(p.stage)
+      if (p.jurisdiction) regionsSet.add(p.jurisdiction)
+    })
+    return {
+      commodities: Array.from(commoditiesSet).sort(),
+      stages: Array.from(stagesSet).sort(),
+      regions: Array.from(regionsSet).sort()
+    }
+  }, [projects])
+
+  // Compute filtered projects based on projectFilters (frontend-only)
+  const filteredProjects = useMemo(() => {
+    const f = projectFilters
+    return projects.filter((p: any) => {
+      // commodity (multi-select supported internally, v1 UI uses single-select)
+      if (f.commodities && f.commodities.length > 0) {
+        const tokens = String(p.commodity || '').split(/[\s,\/\-]+/).map((s: string) => s.trim().toLowerCase()).filter(Boolean)
+        const match = f.commodities.some((c) => tokens.includes(c.toLowerCase()))
+        if (!match) return false
+      }
+      // stage (exact normalized match)
+      if (f.stage) {
+        if ((p.stage || '').toLowerCase() !== f.stage.toLowerCase()) return false
+      }
+      // priority (derived)
+      if (f.priority) {
+        if (rankProject(p).priority !== f.priority) return false
+      }
+      // region -> jurisdiction (exact normalized match)
+      if (f.region) {
+        if ((p.jurisdiction || '').toLowerCase() !== f.region.toLowerCase()) return false
+      }
+      return true
+    })
+  }, [projects, projectFilters])
+
+  // Ensure currently-selected project remains visible even if filtered-out
+  const shownProjects = useMemo(() => {
+    if (!selectedProject) return filteredProjects
+    if (filteredProjects.some(p => p.slug === selectedProject.slug)) return filteredProjects
+    return [selectedProject, ...filteredProjects.filter((p: any) => p.slug !== selectedProject.slug)]
+  }, [filteredProjects, selectedProject])
+
+  // Counts for UX clarity
+  const totalCount = projects.length
+  const filteredCount = filteredProjects.length
+  const shownCount = shownProjects.length
+  const selectedKeptVisible = !!selectedProject && !filteredProjects.some(p => p.slug === selectedProject.slug)
+
+  // Are any project filters active?
+  const filtersActive = useMemo(() => {
+    const f = projectFilters
+    return Boolean(f.stage || f.priority || f.region || (f.commodities && f.commodities.length > 0))
+  }, [projectFilters])
+
+  const noMatches = filtersActive && filteredProjects.length === 0
+
+  // Auto-select rules when filters are active and there are matches
+  useEffect(() => {
+    if (!filtersActive) return
+    if (filteredProjects.length === 0) {
+      // keep current selection temporarily
+      return
+    }
+    // If there are matches and selected project does not match, auto-select first
+    if (!selectedProject) {
+      setSelectedProject(filteredProjects[0])
+      return
+    }
+    const matches = filteredProjects.some(p => p.slug === selectedProject.slug)
+    if (!matches) {
+      setSelectedProject(filteredProjects[0])
+    }
+  }, [filtersActive, filteredProjects])
 
   // Fetch summaries for drillholes (used by Au filter / ranking)
   useEffect(() => {
@@ -162,14 +260,15 @@ export function Explorer() {
               value={selectedProject?.slug ?? ''}
               onChange={(e) => {
                 const slug = e.target.value
-                const p = projects.find(pr => pr.slug === slug) || null
+                const p = shownProjects.find(pr => pr.slug === slug) || null
                 setSelectedProject(p)
               }}
             >
-              {projects.map(p => (
+              {shownProjects.map(p => (
                 <option key={p.slug} value={p.slug}>{p.name}</option>
               ))}
             </select>
+            <span className="text-xs text-slate-400 ml-2">Showing {shownCount} of {totalCount} projects</span>
             <ThemeToggle />
           </div>
         </div>
@@ -233,7 +332,7 @@ export function Explorer() {
                 onLoadingChange={setMapLoading}
                 weather={(() => { console.log('[Explorer] passing weather to MapView:', weather); return weather })()}
                 project={selectedProject}
-                projects={projects}
+                projects={shownProjects}
                 onProjectSelect={setSelectedProject}
                 onWeather={handleWeather}
               />
@@ -265,6 +364,20 @@ export function Explorer() {
           </div>
           {/* Sidebar: ExplorationRadar, TopDrillholes */}
           <div className="space-y-8">
+            <ProjectFilters
+              filters={projectFilters}
+              options={{
+                commodities: projectOptions.commodities,
+                stages: projectOptions.stages,
+                priorities: ['HIGH', 'MEDIUM', 'LOW'],
+                regions: projectOptions.regions,
+              }}
+              onChange={(newFilters) => setProjectFilters(newFilters)}
+              onReset={() => setProjectFilters({ commodities: [], stage: '', priority: '', region: '' })}
+              totalCount={totalCount}
+              filteredCount={filteredCount}
+              selectedKeptVisible={selectedKeptVisible}
+            />
             {/* Filters panel */}
             <Card className="border-slate-700">
               <CardHeader className="pb-2">
