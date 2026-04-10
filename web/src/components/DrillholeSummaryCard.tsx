@@ -181,16 +181,14 @@ export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth, peakZone
       {/* Header — hole identity + grade badge */}
       <CardHeader className="pb-2 px-3 sm:px-6">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base sm:text-lg flex items-center space-x-2">
+          <CardTitle className="text-xl font-extrabold text-white tracking-tight drop-shadow-sm flex items-center space-x-2">
             <FlaskConical className="w-5 h-5 text-amber-500" />
             <span className="truncate max-w-[120px] sm:max-w-none">{holeName}</span>
           </CardTitle>
-          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${badgeStyles[grade]}`}>
-            {badgeIcons[grade]} {grade}
-          </span>
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${badgeStyles[grade]}`}>{badgeIcons[grade]} {grade}</span>
         </div>
         {maxDepth != null && (
-          <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+          <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 opacity-80">
             {maxDepth.toFixed(0)} m · {summary.total_samples} samples
           </p>
         )}
@@ -202,7 +200,7 @@ export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth, peakZone
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider">Peak Au</p>
-              <p className="text-xl sm:text-2xl font-bold text-amber-400">
+              <p className="text-2xl sm:text-3xl font-extrabold text-amber-400 drop-shadow-sm">
                 {summary.max_au != null ? summary.max_au.toFixed(3) : 'N/A'}
                 <span className="text-xs font-normal text-slate-500 ml-1">ppm</span>
               </p>
@@ -214,7 +212,7 @@ export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth, peakZone
             </div>
             <div className="text-right">
               <p className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider">Avg Au</p>
-              <p className="text-base sm:text-lg font-semibold text-slate-300">
+              <p className="text-lg sm:text-xl font-bold text-slate-100">
                 {summary.avg_au != null ? summary.avg_au.toFixed(3) : 'N/A'}
                 <span className="text-xs font-normal text-slate-500 ml-1">ppm</span>
               </p>
@@ -249,7 +247,7 @@ export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth, peakZone
         {/* Insight block — signal quality */}
         <div className="bg-slate-800/30 rounded-lg p-2 border border-slate-700/30">
           <p className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider mb-1">Signal Insight</p>
-          <p className="text-xs sm:text-xs text-slate-300 leading-relaxed">
+          <p className="text-xs sm:text-xs text-slate-300 leading-relaxed opacity-90">
             {(() => {
               const depthLabel = peakZone
                 ? peakZone.from < (maxDepth ?? 999) * 0.25
