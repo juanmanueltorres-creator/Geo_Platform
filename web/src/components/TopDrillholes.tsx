@@ -99,9 +99,9 @@ export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillhole
   return (
     <Card className="border-slate-700">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center space-x-2 text-sm">
-          <Trophy className="w-4 h-4 text-amber-500" />
-          <span>Drillholes by Au</span>
+        <CardTitle className="flex items-center space-x-2 text-xl font-extrabold text-white tracking-tight drop-shadow-sm">
+          <Trophy className="w-5 h-5 text-amber-500" />
+          <span>Top Drillholes</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -126,11 +126,11 @@ export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillhole
                 <div className="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">
                   {idx + 1}
                 </div>
-                <p className="font-medium text-slate-200 text-sm">
+                <p className="font-bold text-slate-100 text-[16px] leading-tight">
                   {item.drillhole.drillhole}
                 </p>
               </div>
-              <span className="text-xs font-bold text-amber-400">
+              <span className="text-xs font-bold text-amber-300 drop-shadow-sm">
                 {item.summary.max_au?.toFixed(2)} ppm
               </span>
             </div>
@@ -145,7 +145,7 @@ export function TopDrillholes({ drillholes, onSelectDrillhole, selectedDrillhole
                   }}
                 />
               </div>
-              <div className="flex justify-between text-[11px] text-slate-500">
+              <div className="flex justify-between text-[11px] text-slate-500 opacity-80">
                 <span>{item.summary.total_samples} samples</span>
                 <span>Avg: {item.summary.avg_au?.toFixed(2) || '—'} ppm</span>
               </div>
