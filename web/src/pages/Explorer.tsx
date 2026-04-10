@@ -165,7 +165,7 @@ export function Explorer() {
     return Boolean(f.stage || f.priority || f.region || (f.commodities && f.commodities.length > 0))
   }, [projectFilters])
 
-  const noMatches = filtersActive && filteredProjects.length === 0
+  
 
   // Auto-select rules when filters are active and there are matches
   useEffect(() => {

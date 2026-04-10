@@ -66,7 +66,7 @@ function WeatherPanelOverlay({ project, onWeather }: { project?: any, onWeather?
   )
 }
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { MapContainer, WMSTileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet'
+import { MapContainer, WMSTileLayer, Marker, Popup, GeoJSON, useMap, TileLayer } from 'react-leaflet'
 import L from 'leaflet'
 import { LeafletScaleControl } from './LeafletScaleControl'
 import { FieldConditions } from './FieldConditions'
@@ -296,6 +296,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   const [showGeologyWMS, setShowGeologyWMS] = useState(true)
   const [showFaultsWMS, setShowFaultsWMS] = useState(true)
   const [wmsOpacity, setWmsOpacity] = useState(0.35)
+  const [showHillshade, setShowHillshade] = useState(false)
 
   const toggleLayer = useCallback((key: GeologyLayerKey) => {
     setVisibleLayers(prev => ({ ...prev, [key]: !prev[key] }))
@@ -573,6 +574,12 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         attribution={TILE_LAYERS[tileLayer].attribution}
         maxZoom={TILE_LAYERS[tileLayer].maxZoom}
       />
+      {showHillshade && (
+          <TileLayer
+            url="https://services.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}"
+            opacity={0.3}
+          />
+      )}
       {/* Leaflet metric scale control (bottom-right, unobtrusive) */}
       <LeafletScaleControl />
       <FullscreenToggle onMobileToggle={() => setIsMobileFs(v => !v)} isMobileFs={isMobileFs} />
@@ -860,6 +867,12 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
               />
               <span style={{ fontSize: 10, color: '#94a3b8', minWidth: 26 }}>{Math.round(wmsOpacity * 100)}%</span>
             </div>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, color: '#e2e8f0', padding: '2px 0' }}>
+                  <input type="checkbox" checked={showHillshade} onChange={() => setShowHillshade(v => !v)} style={{ accentColor: '#94a3b8', width: 14, height: 14 }} />
+                  <span style={{ width: 10, height: 10, borderRadius: 2, background: '#94a3b8', opacity: 0.7, display: 'inline-block' }} />
+                  Terrain (Hillshade)
+                </label>
 
             <div style={{ borderTop: '1px solid rgba(148,163,184,0.3)', margin: '2px 0' }} />
 
