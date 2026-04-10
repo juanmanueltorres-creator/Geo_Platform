@@ -102,6 +102,79 @@ export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth, peakZone
 
   const grade = classifyGrade(summary.max_au, summary.avg_au)
 
+  // Try to pick up assays if some global cache exists; otherwise export will use an empty array.
+  const getAssaysForExport = () => {
+    try {
+      const w = window as any
+      if (w.__ASSAYS_CACHE__ && Array.isArray(w.__ASSAYS_CACHE__[drillholeId])) return w.__ASSAYS_CACHE__[drillholeId]
+      if (w.__LATEST_ASSAYS__ && Array.isArray(w.__LATEST_ASSAYS__)) {
+        return w.__LATEST_ASSAYS__.filter((a: any) => a.drillhole_id === drillholeId || a.hole_id === drillholeId)
+      }
+    } catch (_) {
+      // ignore
+    }
+    return [] as any[]
+  }
+
+  const exportJSON = () => {
+    try {
+      const payload = {
+        drillhole: summary?.drillhole_id ?? drillholeId,
+        summary,
+        assays: getAssaysForExport() || [],
+        geology: geology ?? null,
+        exported_at: new Date().toISOString(),
+      }
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+      const fname = `${payload.drillhole ?? 'drillhole'}_${new Date().toISOString().replace(/[:.]/g, '-')}.json`
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fname
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Export JSON failed', err)
+    }
+  }
+
+  const exportCSV = () => {
+    try {
+      const assays = getAssaysForExport() || []
+      if (!Array.isArray(assays) || assays.length === 0) return
+
+      const lines: string[] = []
+      lines.push('from_m,to_m,au_ppm')
+      for (const r of assays) {
+        const from = r.from_m ?? r.from ?? r.FROM ?? null
+        const to = r.to_m ?? r.to ?? r.TO ?? null
+        const au = r.au_ppm ?? r.au ?? r.Au ?? r.AU ?? null
+        if (from == null || to == null || au == null) continue
+        lines.push(`${from},${to},${au}`)
+      }
+
+      if (lines.length <= 1) return // no valid rows
+
+      const csv = lines.join('\n')
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      const fname = `${summary?.drillhole_id ?? drillholeId}_assays_${new Date().toISOString().replace(/[:.]/g, '-')}.csv`
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fname
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Export CSV failed', err)
+    }
+  }
+
+  const hasAssays = getAssaysForExport().length > 0
+
   return (
     <Card className="border-slate-700">
       {/* Header — hole identity + grade badge */}
@@ -195,6 +268,26 @@ export function DrillholeSummaryCard({ drillholeId, holeName, maxDepth, peakZone
               return `Background gold values across ${summary.total_samples} samples${zoneStr ? `, best interval at ${zoneStr}` : ''} — low exploration priority.`
             })()}
           </p>
+        </div>
+
+        {/* Export actions (JSON / CSV). JSON uses summary+geology and any available assays; CSV exports assays only. */}
+        <div className="flex items-center gap-2 mt-2">
+          <button
+            onClick={exportJSON}
+            disabled={!summary}
+            className="px-3 py-1 bg-geo-primary text-white rounded text-xs font-semibold disabled:opacity-50"
+            title={!summary ? 'No summary available' : 'Download drillhole JSON'}
+          >
+            Export JSON
+          </button>
+          <button
+            onClick={exportCSV}
+            disabled={!hasAssays}
+            className="px-3 py-1 bg-slate-700 text-white rounded text-xs font-semibold disabled:opacity-50"
+            title={!hasAssays ? 'No assays available' : 'Download assays CSV'}
+          >
+            Export CSV
+          </button>
         </div>
 
         {/* Geological context — lithology + alteration from geology-summary */}

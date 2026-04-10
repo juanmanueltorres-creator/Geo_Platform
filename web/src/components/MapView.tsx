@@ -311,6 +311,57 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   const coordBarRef = useRef<HTMLDivElement | null>(null)
   const copyTimerRef = useRef<number | null>(null)
 
+  // Download helper for data URLs
+  const downloadDataUrl = (dataUrl: string, filename: string) => {
+    const a = document.createElement('a')
+    a.href = dataUrl
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  }
+
+  // Capture the map container using a client-side DOM-to-image library if available.
+  const captureMap = async () => {
+    const map = mapRef.current
+    if (!map) {
+      alert('Map not ready')
+      return
+    }
+    const container = map.getContainer() as HTMLElement
+    const ts = new Date().toISOString().replace(/[:.]/g, '-')
+    const filename = `map_${ts}.png`
+
+    try {
+      const w = window as any
+      // Try html-to-image API
+      if (w.htmlToImage && typeof w.htmlToImage.toPng === 'function') {
+        const dataUrl = await w.htmlToImage.toPng(container)
+        downloadDataUrl(dataUrl, filename)
+        return
+      }
+      // Try dom-to-image
+      if (w.domtoimage && typeof w.domtoimage.toPng === 'function') {
+        const dataUrl = await w.domtoimage.toPng(container)
+        downloadDataUrl(dataUrl, filename)
+        return
+      }
+      // Try html2canvas
+      if (w.html2canvas && typeof w.html2canvas === 'function') {
+        const canvas = await w.html2canvas(container)
+        const dataUrl = canvas.toDataURL('image/png')
+        downloadDataUrl(dataUrl, filename)
+        return
+      }
+
+      throw new Error('No client-side capture library found')
+    } catch (err) {
+      console.warn('Screenshot failed', err)
+      // Fallback: inform user to use manual capture
+      alert('Screenshot not supported in this browser. Use manual capture.')
+    }
+  }
+
   const fetchDrillholes = useCallback(async () => {
     try {
       setLoading(true)
@@ -873,6 +924,20 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
                   <span style={{ width: 10, height: 10, borderRadius: 2, background: '#94a3b8', opacity: 0.7, display: 'inline-block' }} />
                   Terrain (Hillshade)
                 </label>
+
+                <div style={{ marginTop: 6 }}>
+                  <button
+                    onClick={captureMap}
+                    disabled={!mapRef.current}
+                    title={!mapRef.current ? 'Map not ready' : 'Capture map as PNG'}
+                    style={{
+                      padding: '6px 8px', fontSize: 12, background: 'rgba(30,41,59,0.95)', color: '#e2e8f0',
+                      borderRadius: 6, border: '1px solid rgba(148,163,184,0.12)', cursor: 'pointer'
+                    }}
+                  >
+                    Capture Map
+                  </button>
+                </div>
 
             <div style={{ borderTop: '1px solid rgba(148,163,184,0.3)', margin: '2px 0' }} />
 
