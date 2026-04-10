@@ -244,20 +244,20 @@ export function Explorer() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-950 dark:text-slate-50">
       {/* Header */}
-      <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
+      <header className="border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 shadow-none sticky top-0 z-50 backdrop-blur-md transition-all duration-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-sm">
+              <Zap className="w-5 h-5 text-white drop-shadow" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">GeoPlatform</h1>
-              <p className="text-xs text-slate-500">Mineral Exploration Dashboard</p>
+            <div className="flex flex-col justify-center min-w-0">
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">GeoPlatform</h1>
+              <p className="text-xs text-slate-400 font-medium leading-tight truncate">Mineral Exploration Dashboard</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <select
-              className="text-sm rounded border px-2 py-1 bg-white dark:bg-slate-900"
+              className="text-sm rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 bg-white/80 dark:bg-slate-900/80 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 transition-all duration-200"
               value={selectedProject?.slug ?? ''}
               onChange={(e) => {
                 const slug = e.target.value
@@ -269,7 +269,7 @@ export function Explorer() {
                 <option key={p.slug} value={p.slug}>{p.name}</option>
               ))}
             </select>
-            <span className="text-xs text-slate-400 ml-2">Showing {shownCount} of {totalCount} projects</span>
+            <span className="text-xs text-slate-400 ml-2 whitespace-nowrap">Showing <span className="font-semibold text-slate-700 dark:text-slate-200">{shownCount}</span> of {totalCount} projects</span>
             <ThemeToggle />
           </div>
         </div>
@@ -363,7 +363,7 @@ export function Explorer() {
             )}
           </div>
           {/* Sidebar: ExplorationRadar, TopDrillholes */}
-          <div className="space-y-8">
+          <div className="space-y-6">
             <ProjectFilters
               filters={projectFilters}
               options={{
@@ -379,48 +379,51 @@ export function Explorer() {
               selectedKeptVisible={selectedKeptVisible}
             />
             {/* Filters panel */}
-            <Card className="border-slate-700">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Drillhole Filters</CardTitle>
+            <Card>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-base font-semibold tracking-tight">Drillhole Filters</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="text-xs text-slate-400">Au threshold (ppm)</div>
-                <input
-                  type="number"
-                  step="0.1"
-                  min={0}
-                  placeholder="e.g. 0.5"
-                  value={auThreshold ?? ''}
-                  onChange={(e) => setAuThreshold(e.target.value === '' ? null : Number(e.target.value))}
-                  className="w-full px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sm"
-                />
-
-                <div className="text-xs text-slate-400">Min depth (m)</div>
-                <input
-                  type="number"
-                  step="1"
-                  min={0}
-                  value={minDepthFilter ?? ''}
-                  onChange={(e) => setMinDepthFilter(e.target.value === '' ? null : Number(e.target.value))}
-                  className="w-full px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sm"
-                />
-
-                <div className="text-xs text-slate-400">Top N (by max Au)</div>
-                <select
-                  value={topN ?? ''}
-                  onChange={(e) => setTopN(e.target.value === '' ? null : Number(e.target.value))}
-                  className="w-full px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sm"
-                >
-                  <option value="">All</option>
-                  <option value="5">Top 5</option>
-                  <option value="10">Top 10</option>
-                  <option value="20">Top 20</option>
-                </select>
-
-                <div className="flex items-center justify-between mt-2">
+              <CardContent className="space-y-3 pt-1">
+                <div>
+                  <div className="text-xs text-slate-400/80 font-medium mb-1">Au threshold (ppm)</div>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min={0}
+                    placeholder="e.g. 0.5"
+                    value={auThreshold ?? ''}
+                    onChange={(e) => setAuThreshold(e.target.value === '' ? null : Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-md bg-slate-900/60 border border-white/10 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40 transition-all duration-200"
+                  />
+                </div>
+                <div>
+                  <div className="text-xs text-slate-400/80 font-medium mb-1">Min depth (m)</div>
+                  <input
+                    type="number"
+                    step="1"
+                    min={0}
+                    value={minDepthFilter ?? ''}
+                    onChange={(e) => setMinDepthFilter(e.target.value === '' ? null : Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-md bg-slate-900/60 border border-white/10 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40 transition-all duration-200"
+                  />
+                </div>
+                <div>
+                  <div className="text-xs text-slate-400/80 font-medium mb-1">Top N (by max Au)</div>
+                  <select
+                    value={topN ?? ''}
+                    onChange={(e) => setTopN(e.target.value === '' ? null : Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-md bg-slate-900/60 border border-white/10 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400/40 transition-all duration-200"
+                  >
+                    <option value="">All</option>
+                    <option value="5">Top 5</option>
+                    <option value="10">Top 10</option>
+                    <option value="20">Top 20</option>
+                  </select>
+                </div>
+                <div className="flex items-center justify-between mt-3">
                   <button
                     onClick={() => { setAuThreshold(null); setMinDepthFilter(null); setTopN(null) }}
-                    className="px-3 py-1 rounded bg-slate-700 text-sm text-slate-200"
+                    className="px-3 py-1.5 rounded-md bg-slate-800/80 text-sm text-slate-100 border border-white/10 hover:border-amber-400/40 hover:brightness-110 transition-all duration-200"
                   >Reset</button>
                   <div className="text-[11px] text-slate-400">
                     {summariesLoading

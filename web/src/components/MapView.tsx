@@ -17,36 +17,58 @@ function WeatherPanelOverlay({ project, onWeather, isMobile }: { project?: any, 
   const [open, setOpen] = useState(false)
   const compact = !!isMobile
   return (
-    <div style={{ width: open ? (compact ? 120 : 170) : 'auto', transition: 'width 0.18s' }}>
+    <div
+      style={{
+        width: open ? (compact ? 140 : 200) : 'auto',
+        transition: 'width 0.18s',
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        zIndex: 1200,
+      }}
+    >
       {!open && (
         <button
           aria-label="Show weather panel"
           title="Show weather panel"
           className="flex items-center gap-2"
           style={{
-            background: 'rgba(15,23,42,0.92)',
-            border: '1px solid rgba(148,163,184,0.3)',
-            borderRadius: 6,
-            padding: compact ? '4px 7px' : '5px 9px',
+            background: 'rgba(15,23,42,0.60)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 12,
+            padding: compact ? '6px 12px' : '8px 16px',
             cursor: 'pointer',
             color: '#e2e8f0',
-            fontSize: compact ? 12 : 13,
+            fontSize: compact ? 13 : 15,
             fontWeight: 600,
-            boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+            boxShadow: '0 4px 24px rgba(15,23,42,0.18)',
             justifyContent: 'flex-start',
             marginTop: 8,
-            transition: 'background 0.15s',
+            backdropFilter: 'blur(10px)',
+            transition: 'background 0.18s, box-shadow 0.18s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(30,41,59,0.98)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(15,23,42,0.92)')}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(30,41,59,0.72)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(15,23,42,0.60)')}
           onClick={() => setOpen(true)}
         >
-          <span role="img" aria-label="weather" style={{ fontSize: compact ? 15 : 17, color: '#f59e0b', fontWeight: 700 }}>☀️</span>
+          <span role="img" aria-label="weather" style={{ fontSize: compact ? 18 : 22, color: '#fbbf24', fontWeight: 700 }}>☀️</span>
           {!compact && <span style={{ color: '#e2e8f0', fontWeight: 600 }}>Weather</span>}
         </button>
       )}
       {open && (
-        <div className="relative" style={{ marginTop: 8 }}>
+        <div
+          className="relative"
+          style={{
+            marginTop: 8,
+            background: 'rgba(15,23,42,0.60)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 14,
+            boxShadow: '0 4px 24px rgba(15,23,42,0.18)',
+            padding: 16,
+            minWidth: compact ? 120 : 180,
+            backdropFilter: 'blur(10px)',
+          }}
+        >
           <FieldConditions
             project={project}
             onWeather={onWeather}
@@ -55,8 +77,8 @@ function WeatherPanelOverlay({ project, onWeather, isMobile }: { project?: any, 
           <button
             aria-label="Close weather panel"
             title="Close weather panel"
-            className="absolute top-1 right-1 w-6 h-6 rounded bg-slate-800/80 text-slate-100 hover:bg-amber-700/80 flex items-center justify-center border border-slate-700"
-            style={{ fontSize: 15, lineHeight: 1, padding: 0 }}
+            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-slate-800/60 text-slate-100 hover:bg-amber-700/80 flex items-center justify-center border border-white/10 transition-all duration-200"
+            style={{ fontSize: 18, lineHeight: 1, padding: 0, boxShadow: '0 2px 8px rgba(15,23,42,0.10)' }}
             onClick={() => setOpen(false)}
           >
             ×
@@ -296,10 +318,22 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
           }}
         >
           <Popup>
-            <div className="text-sm">
-              <div className="font-bold text-geo-primary mb-1">{p.name}</div>
-              <div className="text-xs mb-1">{p.lat.toFixed(5)}, {p.lon.toFixed(5)}</div>
-              <div className="text-xs">{p.commodity} &middot; {p.stage}</div>
+            <div
+              style={{
+                background: 'rgba(15,23,42,0.60)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 12,
+                boxShadow: '0 4px 24px rgba(15,23,42,0.18)',
+                padding: 14,
+                minWidth: 160,
+                color: '#e2e8f0',
+                backdropFilter: 'blur(10px)',
+                fontSize: 14,
+              }}
+            >
+              <div style={{ fontWeight: 700, color: '#fbbf24', fontSize: 16, marginBottom: 4 }}>{p.name}</div>
+              <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 2 }}>{p.lat.toFixed(5)}, {p.lon.toFixed(5)}</div>
+              <div style={{ fontSize: 12, color: '#f1f5f9' }}>{p.commodity} &middot; {p.stage}</div>
             </div>
           </Popup>
         </Marker>
@@ -700,13 +734,16 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
           title={legendOpen ? 'Hide geology legend' : 'Show geology legend'}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(148,163,184,0.3)',
-            borderRadius: '8px 8px 0 0', padding: '5px 9px', cursor: 'pointer',
-            color: '#e2e8f0', fontSize: 11, fontWeight: 600,
-            boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+            background: 'rgba(15,23,42,0.60)', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '12px 12px 0 0', padding: '8px 16px', cursor: 'pointer',
+            color: '#e2e8f0', fontSize: 13, fontWeight: 600,
+            boxShadow: '0 4px 24px rgba(15,23,42,0.18)',
+            backdropFilter: 'blur(10px)',
+            marginLeft: 12, marginTop: 12,
+            transition: 'background 0.18s, box-shadow 0.18s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(30,41,59,0.98)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(15,23,42,0.92)')}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(30,41,59,0.72)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(15,23,42,0.60)')}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 5h18M3 12h18M3 19h18" />
@@ -714,7 +751,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
           Geology Legend
         </button>
         {legendOpen && (
-          <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 1300, marginTop: -1, border: '1px solid rgba(148,163,184,0.3)', background: 'rgba(15, 23, 42, 0.96)', borderRadius: '0 0 8px 8px', padding: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.4)', color: '#e2e8f0', minWidth: 180, maxHeight: 240, overflowY: 'auto' }}>
+          <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 1300, marginTop: -1, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(15,23,42,0.60)', borderRadius: '0 0 12px 12px', padding: '14px 16px', boxShadow: '0 4px 24px rgba(15,23,42,0.18)', color: '#e2e8f0', minWidth: 200, maxHeight: 260, overflowY: 'auto', backdropFilter: 'blur(10px)' }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: 1 }}>Geology Legend</div>
             <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -851,23 +888,33 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
             }}
           >
             <Popup>
-              <div className="text-sm">
-                <h4 className="font-bold text-geo-primary mb-2">{hole.drillhole}</h4>
-                <table className="mb-2">
+              <div
+                style={{
+                  background: 'rgba(15,23,42,0.60)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 12,
+                  boxShadow: '0 4px 24px rgba(15,23,42,0.18)',
+                  padding: 14,
+                  minWidth: 180,
+                  color: '#e2e8f0',
+                  backdropFilter: 'blur(10px)',
+                  fontSize: 14,
+                }}
+              >
+                <div style={{ fontWeight: 700, color: '#fbbf24', fontSize: 16, marginBottom: 6 }}>{hole.drillhole}</div>
+                <table style={{ marginBottom: 6, width: '100%' }}>
                   <tbody>
                     <tr>
-                      <td className="font-semibold pr-2">Hole ID:</td>
-                      <td>{hole.hole_id}</td>
+                      <td style={{ fontWeight: 600, color: '#f1f5f9', paddingRight: 8 }}>Hole ID:</td>
+                      <td style={{ color: '#e2e8f0' }}>{hole.hole_id}</td>
                     </tr>
                     <tr>
-                      <td className="font-semibold pr-2">Max Depth:</td>
-                      <td>{hole.max_depth != null ? hole.max_depth.toFixed(1) : 'N/A'} m</td>
+                      <td style={{ fontWeight: 600, color: '#f1f5f9', paddingRight: 8 }}>Max Depth:</td>
+                      <td style={{ color: '#e2e8f0' }}>{hole.max_depth != null ? hole.max_depth.toFixed(1) : 'N/A'} m</td>
                     </tr>
                     <tr>
-                      <td className="font-semibold pr-2">Coord:</td>
-                      <td className="text-xs">
-                        {coords[1].toFixed(4)}, {coords[0].toFixed(4)}
-                      </td>
+                      <td style={{ fontWeight: 600, color: '#f1f5f9', paddingRight: 8 }}>Coord:</td>
+                      <td style={{ color: '#cbd5e1', fontSize: 12 }}>{coords[1].toFixed(4)}, {coords[0].toFixed(4)}</td>
                     </tr>
                   </tbody>
                 </table>

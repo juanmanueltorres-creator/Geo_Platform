@@ -30,16 +30,16 @@ export default function ProjectFilters({ filters, options, onChange, onReset, to
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm">Project Filters</CardTitle>
+      <CardHeader className="pb-1">
+        <CardTitle className="text-base font-semibold tracking-tight">Project Filters</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-3 pt-1">
         <div>
-          <div className="text-xs text-slate-400">Commodity</div>
+          <div className="text-xs text-slate-400/80 font-medium mb-1">Commodity</div>
           <select
             value={selectedCommodity}
             onChange={(e) => onChange({ ...filters, commodities: e.target.value ? [e.target.value] : [] })}
-            className="w-full px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sm"
+            className="w-full px-3 py-2 rounded-md bg-slate-900/60 border border-white/10 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400/40 transition-all duration-200"
           >
             <option value="">All</option>
             {options.commodities.map((c) => (
@@ -47,13 +47,12 @@ export default function ProjectFilters({ filters, options, onChange, onReset, to
             ))}
           </select>
         </div>
-
         <div>
-          <div className="text-xs text-slate-400">Stage</div>
+          <div className="text-xs text-slate-400/80 font-medium mb-1">Stage</div>
           <select
             value={filters.stage}
             onChange={(e) => onChange({ ...filters, stage: e.target.value })}
-            className="w-full px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sm"
+            className="w-full px-3 py-2 rounded-md bg-slate-900/60 border border-white/10 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400/40 transition-all duration-200"
           >
             <option value="">All</option>
             {options.stages.map((s) => (
@@ -61,13 +60,12 @@ export default function ProjectFilters({ filters, options, onChange, onReset, to
             ))}
           </select>
         </div>
-
         <div>
-          <div className="text-xs text-slate-400">Priority</div>
+          <div className="text-xs text-slate-400/80 font-medium mb-1">Priority</div>
           <select
             value={filters.priority}
             onChange={(e) => onChange({ ...filters, priority: e.target.value as any })}
-            className="w-full px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sm"
+            className="w-full px-3 py-2 rounded-md bg-slate-900/60 border border-white/10 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400/40 transition-all duration-200"
           >
             <option value="">Any</option>
             {options.priorities.map((p) => (
@@ -75,13 +73,12 @@ export default function ProjectFilters({ filters, options, onChange, onReset, to
             ))}
           </select>
         </div>
-
         <div>
-          <div className="text-xs text-slate-400">Region</div>
+          <div className="text-xs text-slate-400/80 font-medium mb-1">Region</div>
           <select
             value={filters.region}
             onChange={(e) => onChange({ ...filters, region: e.target.value })}
-            className="w-full px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sm"
+            className="w-full px-3 py-2 rounded-md bg-slate-900/60 border border-white/10 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400/40 transition-all duration-200"
           >
             <option value="">All</option>
             {options.regions.map((r) => (
@@ -89,7 +86,6 @@ export default function ProjectFilters({ filters, options, onChange, onReset, to
             ))}
           </select>
         </div>
-
         <div className="text-xs text-slate-400 mt-2">Showing {filteredCount} of {totalCount} projects</div>
         {noMatches && (
           <>
@@ -99,11 +95,10 @@ export default function ProjectFilters({ filters, options, onChange, onReset, to
             )}
           </>
         )}
-
         <div className="flex justify-end mt-2">
           <button
             onClick={onReset}
-            className="text-sm text-slate-400 hover:text-slate-200"
+            className="text-sm text-slate-400 hover:text-slate-100 border border-white/10 px-3 py-1.5 rounded-md transition-all duration-200 hover:border-amber-400/40 hover:brightness-110"
           >
             Reset filters
           </button>

@@ -194,46 +194,65 @@ export default function MapMeasurementTools({ mapRef }: Props) {
 
   return (
     <div>
-      <div style={{ position: 'absolute', top: 150, left: 12, zIndex: 1400 }}>
+      <div style={{ position: 'absolute', top: 150, left: 16, zIndex: 1400 }}>
         <button
           onClick={() => setActive(v => !v)}
           title={active ? 'Exit measurement mode' : 'Enter measurement mode'}
           style={{
-            background: active ? '#f59e0b' : 'rgba(255,255,255,0.95)',
-            color: active ? '#ffffff' : '#0b1220',
-            border: active ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(2,6,23,0.08)',
-            padding: '8px 12px', borderRadius: 8, fontWeight: 700, cursor: 'pointer',
-            boxShadow: active ? '0 6px 18px rgba(245,158,11,0.12)' : '0 2px 6px rgba(2,6,23,0.08)'
+            background: active ? 'rgba(251,191,36,0.92)' : 'rgba(15,23,42,0.60)',
+            color: active ? '#1e293b' : '#e2e8f0',
+            border: '1px solid rgba(255,255,255,0.08)',
+            padding: '10px 18px', borderRadius: 12, fontWeight: 700, cursor: 'pointer',
+            boxShadow: '0 4px 24px rgba(15,23,42,0.18)',
+            backdropFilter: 'blur(10px)',
+            fontSize: 15,
+            transition: 'background 0.18s, box-shadow 0.18s',
           }}
+          onMouseEnter={e => (e.currentTarget.style.background = active ? 'rgba(251,191,36,1)' : 'rgba(30,41,59,0.72)')}
+          onMouseLeave={e => (e.currentTarget.style.background = active ? 'rgba(251,191,36,0.92)' : 'rgba(15,23,42,0.60)')}
         >
           {active ? 'Measuring…' : 'Measure'}
         </button>
       </div>
 
       {active && (
-        <div style={{ position: 'absolute', top: 150, left: 64, zIndex: 1400 }}>
-          <div style={{ background: 'rgba(2,6,23,0.86)', color: '#fff', padding: '12px 14px', borderRadius: 8, minWidth: 180, boxShadow: '0 8px 20px rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.03)', boxSizing: 'border-box' }}>
+        <div style={{ position: 'absolute', top: 150, left: 90, zIndex: 1400 }}>
+          <div style={{
+            background: 'rgba(15,23,42,0.60)',
+            color: '#fff',
+            padding: '16px 18px',
+            borderRadius: 14,
+            minWidth: 200,
+            boxShadow: '0 4px 24px rgba(15,23,42,0.18)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxSizing: 'border-box',
+            backdropFilter: 'blur(10px)',
+          }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, lineHeight: 1.3 }}>{statusText}</div>
-              <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, lineHeight: 1.3 }}>{statusText}</div>
+              <div style={{ marginBottom: 10 }}>
                 <button
                   onClick={() => { clearMeasurement(); setPolylineMode(p => !p); setActive(true) }}
                   title={polylineMode ? 'Polyline mode: ON' : 'Polyline mode: OFF'}
                   style={{
-                    padding: '6px 10px', borderRadius: 6, fontWeight: 700, cursor: 'pointer',
-                    background: polylineMode ? '#f59e0b' : 'rgba(255,255,255,0.04)',
-                    color: polylineMode ? '#071225' : '#fff', border: '1px solid rgba(255,255,255,0.06)'
+                    padding: '8px 14px', borderRadius: 8, fontWeight: 700, cursor: 'pointer',
+                    background: polylineMode ? 'rgba(251,191,36,0.92)' : 'rgba(255,255,255,0.08)',
+                    color: polylineMode ? '#1e293b' : '#fff', border: '1px solid rgba(255,255,255,0.12)',
+                    boxShadow: '0 2px 8px rgba(15,23,42,0.10)',
+                    transition: 'background 0.18s',
                   }}
+                  onMouseEnter={e => (e.currentTarget.style.background = polylineMode ? 'rgba(251,191,36,1)' : 'rgba(30,41,59,0.18)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = polylineMode ? 'rgba(251,191,36,0.92)' : 'rgba(255,255,255,0.08)')}
                 >
                   {polylineMode ? 'Path: ON' : 'Path: OFF'}
                 </button>
               </div>
             </div>
-            {distanceText && <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 6, lineHeight: 1.2 }}>{`Distance: ${distanceText}`}</div>}
-            {azimuthText && <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 10, color: 'rgba(255,255,255,0.92)', lineHeight: 1.3 }}>{`Azimuth: ${azimuthText}`}</div>}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={handleReset} style={{ flex: 1, padding: '8px 10px', borderRadius: 6, background: '#0ea5e9', color: '#fff', border: 'none', cursor: 'pointer', fontWeight:700 }}>Reset</button>
-              <button onClick={handleClose} style={{ padding: '8px 10px', borderRadius: 6, background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer', fontWeight:700 }}>Close</button>
+            {distanceText && <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>{`Distance: ${distanceText}`}</div>}
+            {azimuthText && <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: 'rgba(255,255,255,0.92)', lineHeight: 1.3 }}>{`Azimuth: ${azimuthText}`}</div>}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={handleReset} style={{ flex: 1, padding: '10px 12px', borderRadius: 8, background: '#0ea5e9', color: '#fff', border: 'none', cursor: 'pointer', fontWeight:700, boxShadow: '0 2px 8px rgba(15,23,42,0.10)', transition: 'background 0.18s' }}>Reset</button>
+              <button onClick={handleClose} style={{ padding: '10px 12px', borderRadius: 8, background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer', fontWeight:700, boxShadow: '0 2px 8px rgba(15,23,42,0.10)', transition: 'background 0.18s' }}>Close</button>
             </div>
           </div>
         </div>
