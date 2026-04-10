@@ -1,0 +1,53 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Capital" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-68.525, -31.531],
+            [-68.525, -31.445],
+            [-68.380, -31.445],
+            [-68.380, -31.531],
+            [-68.525, -31.531]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Rivadavia" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-68.850, -31.700],
+            [-68.850, -31.500],
+            [-68.600, -31.500],
+            [-68.600, -31.700],
+            [-68.850, -31.700]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Pocito" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-68.450, -31.700],
+            [-68.450, -31.550],
+            [-68.300, -31.550],
+            [-68.300, -31.700],
+            [-68.450, -31.700]
+          ]
+        ]
+      }
+    }
+  ]
+}
