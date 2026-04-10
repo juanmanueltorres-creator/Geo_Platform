@@ -301,6 +301,9 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
   // Place a clean GeoJSON file at `public/data/san_juan_departamentos.geojson`.
   const [showDepartamentos, setShowDepartamentos] = useState(false)
   const [departamentosGeoJSON, setDepartamentosGeoJSON] = useState<any | null>(null)
+  // Rutas overlay (San Juan) — road network lines from `public/data/san_juan_rutas.geojson`.
+  const [showRutas, setShowRutas] = useState(false)
+  const [rutasGeoJSON, setRutasGeoJSON] = useState<any | null>(null)
 
   const toggleLayer = useCallback((key: GeologyLayerKey) => {
     setVisibleLayers(prev => ({ ...prev, [key]: !prev[key] }))
@@ -317,6 +320,19 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         return r.json()
       })
       .then(j => { if (mounted) setDepartamentosGeoJSON(j) })
+      .catch(() => { /* keep quiet; file may not be present in this environment */ })
+    return () => { mounted = false }
+  }, [])
+
+  // Load local GeoJSON for San Juan rutas (roads). Served from `public/data/`.
+  useEffect(() => {
+    let mounted = true
+    fetch('/data/san_juan_rutas.geojson')
+      .then(r => {
+        if (!r.ok) throw new Error('Failed to fetch rutas geojson')
+        return r.json()
+      })
+      .then(j => { if (mounted) setRutasGeoJSON(j) })
       .catch(() => { /* keep quiet; file may not be present in this environment */ })
     return () => { mounted = false }
   }, [])
@@ -668,6 +684,8 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         />
       )}
       {showFaultsWMS && (
+        // Note: this WMS returns raster tiles; color cannot be recolored client-side.
+        // To render faults in a different color the WMS must expose a server-side style (use `styles` param).
         <WMSTileLayer
           url="https://sigam.segemar.gov.ar/geoserver/ows"
           params={{
@@ -676,7 +694,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
             transparent: true,
             version: '1.1.1',
           }}
-          opacity={Math.min(wmsOpacity + 0.2, 1)}
+          opacity={Math.min(wmsOpacity + 0.35, 1)}
         />
       )}
 
@@ -771,6 +789,48 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
           onEachFeature={(feature, layer) => {
             const name = feature?.properties?.name ?? feature?.properties?.NOMBRE ?? 'Departamento'
             layer.bindTooltip(`<strong>${name}</strong>`, { sticky: true })
+          }}
+        />
+      )}
+
+      {/* Rutas (San Juan) — road network overlay from local GeoJSON */}
+      {showRutas && rutasGeoJSON && (
+        <GeoJSON
+          key="rutas"
+          data={rutasGeoJSON}
+          style={(feature: any) => {
+            const props = feature?.properties ?? {}
+            const jurisd = String(props.jurisdicci ?? '').toLowerCase()
+            const objeto = String(props.objeto ?? '').toLowerCase()
+
+            if (objeto === 'huella') {
+              const z = mapRef.current?.getZoom() ?? 8
+              let weight = 0.8
+              let opacity = 0.35
+              if (z >= 13) { weight = 1.6; opacity = 0.8 }
+              else if (z >= 11) { weight = 1.2; opacity = 0.6 }
+              else if (z >= 9) { weight = 1.0; opacity = 0.5 }
+              return { color: '#9ca3af', weight, opacity, lineCap: 'round', lineJoin: 'round' }
+            }
+
+            if (jurisd.includes('nacional')) {
+              return { color: '#374151', weight: 1.6, opacity: 0.8 }
+            }
+
+            if (jurisd.includes('provincial')) {
+              return { color: '#6b7280', weight: 1.2, opacity: 0.6 }
+            }
+
+            return { color: '#9ca3af', weight: 1, opacity: 0.4 }
+          }}
+          onEachFeature={(feature, layer) => {
+            const label =
+              feature?.properties?.rtn ??
+              feature?.properties?.ref ??
+              feature?.properties?.name ??
+              'Ruta'
+            const displayLabel = (/^ruta\b/i.test(String(label)) ? label : `Ruta ${label}`)
+            layer.bindTooltip(`<strong>${displayLabel}</strong>`, { sticky: true })
           }}
         />
       )}
@@ -980,6 +1040,11 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
                   <input type="checkbox" checked={showDepartamentos} onChange={() => setShowDepartamentos(v => !v)} style={{ accentColor: '#5f6b7a', width: 14, height: 14 }} />
                   <span style={{ width: 10, height: 10, borderRadius: 2, background: '#5f6b7a', opacity: 0.35, display: 'inline-block' }} />
                   Departamentos (San Juan)
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, color: '#e2e8f0', padding: '2px 0' }}>
+                  <input type="checkbox" checked={showRutas} onChange={() => setShowRutas(v => !v)} style={{ accentColor: '#f59e0b', width: 14, height: 14 }} />
+                  <span style={{ width: 10, height: 10, borderRadius: 2, background: '#f59e0b', opacity: 0.9, display: 'inline-block' }} />
+                  Rutas (San Juan)
                 </label>
 
             <div style={{ borderTop: '1px solid rgba(148,163,184,0.3)', margin: '2px 0' }} />
