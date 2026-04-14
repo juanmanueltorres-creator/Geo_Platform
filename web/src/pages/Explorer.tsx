@@ -2,6 +2,7 @@
 import { DrillholeSummaryCard } from '@/components/DrillholeSummaryCard'
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Zap, Globe } from 'lucide-react'
+import BottomSheet from '@/components/BottomSheet'
 import { MapView } from '@/components/MapView'
 import type { Weather } from '@/components/FieldConditions'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -49,6 +50,7 @@ export function Explorer() {
   const [projects, setProjects] = useState<any[]>([])
   const [selectedProject, setSelectedProject] = useState<any | null>(null)
   const [selectedDrillhole, setSelectedDrillhole] = useState<Drillhole | null>(null)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [allDrillholes, setAllDrillholes] = useState<Drillhole[]>([])
   // Filtering state
   const [auThreshold, setAuThreshold] = useState<number | null>(null)
@@ -72,6 +74,7 @@ export function Explorer() {
   const [mapLoading, setMapLoading] = useState(true)
   const [showWarmup, setShowWarmup] = useState(false)
   const warmupTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isMobile = isMobileFromMap
 
   useEffect(() => {
     if (mapLoading) {
@@ -83,6 +86,12 @@ export function Explorer() {
     }
     return () => { if (warmupTimer.current) clearTimeout(warmupTimer.current) }
   }, [mapLoading])
+
+  useEffect(() => {
+    if (selectedProject || selectedDrillhole) {
+      setIsSheetOpen(true)
+    }
+  }, [selectedProject, selectedDrillhole])
 
   // Fetch projects list and set default to Filo del Sol
   useEffect(() => {
@@ -241,6 +250,15 @@ export function Explorer() {
     return [selectedDrillhole, ...filteredDrillholes]
   }, [filteredDrillholes, selectedDrillhole])
 
+  const selectedDrillholeSummary = selectedDrillhole ? summaries[selectedDrillhole.drillhole_id] : null
+  const projectMobileDescription = selectedProject?.notes || selectedProject?.geological_setting || ''
+  const compactProjectModel = selectedProject?.deposit_model && selectedProject.deposit_model.length > 44
+    ? `${selectedProject.deposit_model.slice(0, 44).trim()}...`
+    : selectedProject?.deposit_model || 'N/A'
+  const truncatedProjectDescription = projectMobileDescription.length > 88
+    ? `${projectMobileDescription.slice(0, 88).trim()}...`
+    : projectMobileDescription
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-950 dark:text-slate-50">
       {/* Header */}
@@ -283,10 +301,10 @@ export function Explorer() {
           {/* Main Section: ProjectOverview + Map */}
           <div className="lg:col-span-2 flex flex-col">
             {/* Project Overview as contextual header */}
-            <ProjectOverview project={selectedProject} />
+            {!isMobile && <ProjectOverview project={selectedProject} />}
 
             {/* Warm-up Banner */}
-            {showWarmup && (
+            {!isMobile && showWarmup && (
               <div
                 className="mb-3 flex items-center gap-3 px-4 py-2.5 rounded-lg border border-amber-400/60 bg-slate-900/80 shadow-sm animate-fade-in"
                 style={{ minHeight: 44, borderWidth: 1.5, boxShadow: '0 2px 8px rgba(252,211,77,0.07)' }}
@@ -338,7 +356,7 @@ export function Explorer() {
             </div>
 
             {/* Drillhole Analysis Panel and Assay Chart */}
-            {selectedDrillhole && (
+            {!isMobile && selectedDrillhole && (
               <>
                 <div className="mt-6">
                   <DrillholeSummaryCard
@@ -363,7 +381,7 @@ export function Explorer() {
             )}
           </div>
           {/* Sidebar: ExplorationRadar, TopDrillholes */}
-          <div className="space-y-6">
+          {!isMobile && <div className="space-y-6">
             <ProjectFilters
               filters={projectFilters}
               options={{
@@ -443,16 +461,78 @@ export function Explorer() {
               onSelectDrillhole={setSelectedDrillhole}
               selectedDrillholeId={selectedDrillhole?.drillhole_id ?? null}
             />
-          </div>
+          </div>}
         </div>
       </main>
 
+      {isMobile && (selectedDrillhole || selectedProject) && (
+        <BottomSheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)}>
+          {selectedDrillhole ? (
+            <div className="space-y-3">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300/90">Drillhole</div>
+                <h2 className="mt-1 text-lg font-semibold leading-tight text-white">{selectedDrillhole.drillhole}</h2>
+                <p className="mt-1 text-sm text-slate-400">ID: {selectedDrillhole.drillhole_id}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-slate-500">Total depth</div>
+                  <div className="mt-1 font-medium text-slate-100">
+                    {selectedDrillhole.max_depth != null ? `${selectedDrillhole.max_depth} m` : 'N/A'}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-slate-500">Max Au</div>
+                  <div className="mt-1 font-medium text-slate-100">
+                    {selectedDrillholeSummary?.max_au != null ? `${selectedDrillholeSummary.max_au} ppm` : 'N/A'}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-slate-500">Samples</div>
+                  <div className="mt-1 font-medium text-slate-100">
+                    {selectedDrillholeSummary?.total_samples ?? 'N/A'}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-slate-500">Hole ID</div>
+                  <div className="mt-1 truncate font-medium text-slate-100">{selectedDrillhole.hole_id}</div>
+                </div>
+              </div>
+            </div>
+          ) : selectedProject ? (
+            <div className="space-y-3">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300/90">Project</div>
+                <h2 className="mt-1 text-lg font-semibold leading-tight text-white">{selectedProject.name}</h2>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-sm">
+                <div className="flex items-start justify-between gap-3 py-1">
+                  <span className="text-[11px] uppercase tracking-wide text-slate-500">Commodity</span>
+                  <span className="text-right font-medium text-slate-100">{selectedProject.commodity || 'N/A'}</span>
+                </div>
+                <div className="flex items-start justify-between gap-3 border-t border-slate-800/80 py-2">
+                  <span className="text-[11px] uppercase tracking-wide text-slate-500">Region</span>
+                  <span className="text-right font-medium text-slate-100">{selectedProject.jurisdiction || 'N/A'}</span>
+                </div>
+                <div className="flex items-start justify-between gap-3 border-t border-slate-800/80 pt-2">
+                  <span className="text-[11px] uppercase tracking-wide text-slate-500">Model</span>
+                  <span className="max-w-[60%] text-right text-sm font-medium leading-5 text-slate-100">{compactProjectModel}</span>
+                </div>
+              </div>
+              {truncatedProjectDescription && (
+                <p className="text-sm leading-5 text-slate-300">{truncatedProjectDescription}</p>
+              )}
+            </div>
+          ) : null}
+        </BottomSheet>
+      )}
+
       {/* Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mt-8">
+      {!isMobile && <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-xs text-slate-500 dark:text-slate-600">
           <p>GeoPlatform · Mineral Exploration Dashboard · React + Vite + FastAPI</p>
         </div>
-      </footer>
+      </footer>}
     </div>
   )
 }

@@ -19,11 +19,11 @@ function WeatherPanelOverlay({ project, onWeather, isMobile }: { project?: any, 
   return (
     <div
       style={{
-        width: open ? (compact ? 140 : 200) : 'auto',
+        width: open ? (compact ? 180 : 200) : 'auto',
         transition: 'width 0.18s',
         position: 'absolute',
-        top: 20,
-        left: 20,
+        top: compact ? 0 : 20,
+        left: compact ? 0 : 20,
         zIndex: 1200,
       }}
     >
@@ -43,7 +43,7 @@ function WeatherPanelOverlay({ project, onWeather, isMobile }: { project?: any, 
             fontWeight: 600,
             boxShadow: '0 4px 24px rgba(15,23,42,0.18)',
             justifyContent: 'flex-start',
-            marginTop: 8,
+            marginTop: compact ? 0 : 8,
             backdropFilter: 'blur(10px)',
             transition: 'background 0.18s, box-shadow 0.18s',
           }}
@@ -59,13 +59,14 @@ function WeatherPanelOverlay({ project, onWeather, isMobile }: { project?: any, 
         <div
           className="relative"
           style={{
-            marginTop: 8,
+            marginTop: compact ? 6 : 8,
             background: 'rgba(15,23,42,0.60)',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: 14,
             boxShadow: '0 4px 24px rgba(15,23,42,0.18)',
-            padding: 16,
-            minWidth: compact ? 120 : 180,
+            padding: compact ? 10 : 16,
+            minWidth: compact ? 168 : 180,
+            maxWidth: compact ? 200 : undefined,
             backdropFilter: 'blur(10px)',
           }}
         >
@@ -73,6 +74,7 @@ function WeatherPanelOverlay({ project, onWeather, isMobile }: { project?: any, 
             project={project}
             onWeather={onWeather}
             expanded={true}
+            compact={compact}
           />
           <button
             aria-label="Close weather panel"
@@ -684,8 +686,8 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       {/* Basemap selector — anchored top-right; on mobile stays visible and fixed */}
       <div style={{
         position: 'absolute',
-        top: isMobile ? 8 : 10,
-        right: isMobile ? 8 : 10,
+        top: isMobile ? 14 : 10,
+        right: isMobile ? 14 : 10,
         zIndex: isMobile ? 1400 : 1200,
         display: 'flex',
         flexDirection: 'column',
@@ -696,7 +698,7 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
         <div
           style={{
             display: 'flex', gap: 4, background: 'rgba(255,255,255,0.9)',
-            borderRadius: 6, padding: 3, boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            borderRadius: 6, padding: isMobile ? 4 : 3, boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
           }}
         >
           {(Object.keys(TILE_LAYERS) as TileLayerKey[]).map(key => (
@@ -808,8 +810,16 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
       </div>
       )}
 
-      {/* WeatherPanelOverlay centered at top (moved down on mobile to avoid basemap button) */}
-      <div style={{ position: 'absolute', top: isMobile ? 56 : 10, left: '50%', transform: 'translateX(-50%)', zIndex: 1300 }}>
+      {/* WeatherPanelOverlay stays compact on mobile and opens only on demand */}
+      <div
+        style={{
+          position: 'absolute',
+          top: isMobile ? 84 : 10,
+          left: isMobile ? 14 : '50%',
+          transform: isMobile ? 'none' : 'translateX(-50%)',
+          zIndex: 1300,
+        }}
+      >
         <WeatherPanelOverlay project={project} onWeather={onWeather} isMobile={isMobile} />
       </div>
       <MapInstanceBridge mapRef={mapRef} />
@@ -888,37 +898,57 @@ export function MapView({ onDrillholeSelect, onDrillholesLoaded, selectedDrillho
             }}
           >
             <Popup>
-              <div
-                style={{
-                  background: 'rgba(15,23,42,0.60)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 12,
-                  boxShadow: '0 4px 24px rgba(15,23,42,0.18)',
-                  padding: 14,
-                  minWidth: 180,
-                  color: '#e2e8f0',
-                  backdropFilter: 'blur(10px)',
-                  fontSize: 14,
-                }}
-              >
-                <div style={{ fontWeight: 700, color: '#fbbf24', fontSize: 16, marginBottom: 6 }}>{hole.drillhole}</div>
-                <table style={{ marginBottom: 6, width: '100%' }}>
-                  <tbody>
-                    <tr>
-                      <td style={{ fontWeight: 600, color: '#f1f5f9', paddingRight: 8 }}>Hole ID:</td>
-                      <td style={{ color: '#e2e8f0' }}>{hole.hole_id}</td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: 600, color: '#f1f5f9', paddingRight: 8 }}>Max Depth:</td>
-                      <td style={{ color: '#e2e8f0' }}>{hole.max_depth != null ? hole.max_depth.toFixed(1) : 'N/A'} m</td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: 600, color: '#f1f5f9', paddingRight: 8 }}>Coord:</td>
-                      <td style={{ color: '#cbd5e1', fontSize: 12 }}>{coords[1].toFixed(4)}, {coords[0].toFixed(4)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              {isMobile ? (
+                <div
+                  style={{
+                    background: 'rgba(15,23,42,0.72)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 12,
+                    boxShadow: '0 4px 24px rgba(15,23,42,0.18)',
+                    padding: 12,
+                    minWidth: 150,
+                    color: '#e2e8f0',
+                    backdropFilter: 'blur(10px)',
+                    fontSize: 13,
+                  }}
+                >
+                  <div style={{ fontWeight: 700, color: '#fbbf24', fontSize: 15, marginBottom: 4 }}>{hole.drillhole}</div>
+                  <div style={{ color: '#cbd5e1', fontSize: 12, marginBottom: 4 }}>ID: {hole.hole_id}</div>
+                  <div style={{ color: '#94a3b8', fontSize: 11 }}>Details in the bottom sheet</div>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    background: 'rgba(15,23,42,0.60)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 12,
+                    boxShadow: '0 4px 24px rgba(15,23,42,0.18)',
+                    padding: 14,
+                    minWidth: 180,
+                    color: '#e2e8f0',
+                    backdropFilter: 'blur(10px)',
+                    fontSize: 14,
+                  }}
+                >
+                  <div style={{ fontWeight: 700, color: '#fbbf24', fontSize: 16, marginBottom: 6 }}>{hole.drillhole}</div>
+                  <table style={{ marginBottom: 6, width: '100%' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ fontWeight: 600, color: '#f1f5f9', paddingRight: 8 }}>Hole ID:</td>
+                        <td style={{ color: '#e2e8f0' }}>{hole.hole_id}</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: 600, color: '#f1f5f9', paddingRight: 8 }}>Max Depth:</td>
+                        <td style={{ color: '#e2e8f0' }}>{hole.max_depth != null ? hole.max_depth.toFixed(1) : 'N/A'} m</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: 600, color: '#f1f5f9', paddingRight: 8 }}>Coord:</td>
+                        <td style={{ color: '#cbd5e1', fontSize: 12 }}>{coords[1].toFixed(4)}, {coords[0].toFixed(4)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </Popup>
           </Marker>
         )

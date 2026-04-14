@@ -7,7 +7,7 @@ import { msToKmh, degToCardinal } from '@/lib/windUtils'
 
 export type Weather = any
 
-export function FieldConditions({ project, onWeather, expanded = true, title }: { project?: any; onWeather?: (weather: any) => void; expanded?: boolean; title?: string } = {}) {
+export function FieldConditions({ project, onWeather, expanded = true, title, compact = false }: { project?: any; onWeather?: (weather: any) => void; expanded?: boolean; title?: string; compact?: boolean } = {}) {
     if (!expanded) return null
   const [weather, setWeather] = useState<Weather | null>(null)
   const [loading, setLoading] = useState(true)
@@ -78,6 +78,120 @@ export function FieldConditions({ project, onWeather, expanded = true, title }: 
 
     return out
   })()
+
+  if (compact) {
+    return (
+      <Card className="bg-[rgba(23,37,84,0.48)] border border-white/20 shadow-[0_6px_24px_0_rgba(0,0,0,0.18)] rounded-lg p-2 px-3 backdrop-blur-xl text-white">
+        <CardHeader className="pb-1 px-1">
+          <CardTitle className="text-[13px] font-semibold text-white tracking-tight leading-tight">
+            {typeof title === 'string' && title.length > 0 ? title : 'Weather'}
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="pt-1 pb-1 px-1 flex flex-col gap-2">
+          {loading ? (
+            <div className="text-xs text-white/70">Loading...</div>
+          ) : error ? (
+            <div className="text-xs text-rose-400">{error}</div>
+          ) : (
+            <>
+              <div className="rounded-md bg-white/5 px-3 py-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Thermometer className="w-4 h-4 shrink-0 text-amber-400" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-blue-100">Temperature</span>
+                </div>
+                <div className="mt-1 pl-6 text-base font-bold leading-5 text-white break-words">
+                  {cur?.temperature_c != null ? `${Number(cur.temperature_c).toFixed(1)} C` : 'N/A'}
+                </div>
+              </div>
+
+              <div className="rounded-md bg-white/5 px-3 py-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Wind className="w-4 h-4 shrink-0 text-sky-400" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-blue-100">Wind</span>
+                </div>
+                <div className="mt-1 pl-6 text-sm font-semibold leading-5 text-white break-words">
+                  {msToKmh(cur?.wind_speed_ms)} km/h
+                  {(() => {
+                    const dir = cur?.wind_dir_deg ?? cur?.wind_direction_deg
+                    if (dir != null && !isNaN(dir)) {
+                      return ` ${degToCardinal(dir)}`
+                    }
+                    return ''
+                  })()}
+                </div>
+              </div>
+
+              <div className="rounded-md bg-white/5 px-3 py-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Droplet className="w-4 h-4 shrink-0 text-blue-300" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-blue-100">Humidity</span>
+                </div>
+                <div className="mt-1 pl-6 text-sm font-semibold leading-5 text-white break-words">
+                  {cur?.humidity_percent != null ? `${cur.humidity_percent}%` : 'N/A'}
+                </div>
+              </div>
+
+              {advisories.length > 0 && (
+                <div className="pt-1 max-w-full">
+                  <Badge color="amber">{advisories[0]}</Badge>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (compact && weather === '__legacy_compact__') {
+    return (
+      <Card className="bg-[rgba(23,37,84,0.48)] border border-white/20 shadow-[0_6px_24px_0_rgba(0,0,0,0.18)] rounded-lg p-2 px-3 backdrop-blur-xl text-white">
+        <CardHeader className="pb-1 px-1">
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle className="text-[13px] font-semibold text-white tracking-tight leading-tight">{typeof title === 'string' && title.length > 0 ? title : 'Weather'}</CardTitle>
+            {!loading && !error && (
+              <div className="text-[10px] text-blue-200 font-medium">{cur?.time ?? 'â€”'}</div>
+            )}
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-1 pb-1 px-1 flex flex-col gap-2">
+          {loading ? (
+            <div className="text-xs text-white/70">Loadingâ€¦</div>
+          ) : error ? (
+            <div className="text-xs text-rose-400">{error}</div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+                <Thermometer className="w-4 h-4 text-amber-400" />
+                <div className="text-[1.25rem] leading-none font-bold text-white">{fmt(cur?.temperature_c, 'Â°C')}</div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-md bg-white/5 px-2 py-1.5 text-center">
+                  <div className="text-[10px] font-semibold text-blue-100">Wind</div>
+                  <div className="mt-1 text-[12px] font-semibold text-white">{msToKmh(cur?.wind_speed_ms)} km/h</div>
+                </div>
+                <div className="rounded-md bg-white/5 px-2 py-1.5 text-center">
+                  <div className="text-[10px] font-semibold text-blue-100">Humidity</div>
+                  <div className="mt-1 text-[12px] font-semibold text-white">{cur?.humidity_percent ?? 'â€”'}%</div>
+                </div>
+                <div className="rounded-md bg-white/5 px-2 py-1.5 text-center">
+                  <div className="text-[10px] font-semibold text-blue-100">Precip</div>
+                  <div className="mt-1 text-[12px] font-semibold text-white">{fmt(cur?.precipitation_mm, ' mm')}</div>
+                </div>
+              </div>
+              {advisories.length > 0 && (
+                <div className="pt-1">
+                  <Badge color="amber">{advisories[0]}</Badge>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card className="bg-[rgba(23,37,84,0.48)] border border-white/20 shadow-[0_6px_24px_0_rgba(0,0,0,0.18)] rounded-lg p-3 px-4 backdrop-blur-xl text-white">
