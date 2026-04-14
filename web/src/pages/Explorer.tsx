@@ -51,6 +51,7 @@ export function Explorer() {
   const [selectedProject, setSelectedProject] = useState<any | null>(null)
   const [selectedDrillhole, setSelectedDrillhole] = useState<Drillhole | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [isMobileProjectSelectorExpanded, setIsMobileProjectSelectorExpanded] = useState(true)
   const [allDrillholes, setAllDrillholes] = useState<Drillhole[]>([])
   // Filtering state
   const [auThreshold, setAuThreshold] = useState<number | null>(null)
@@ -92,6 +93,12 @@ export function Explorer() {
       setIsSheetOpen(true)
     }
   }, [selectedProject, selectedDrillhole])
+
+  useEffect(() => {
+    if (selectedDrillhole) {
+      setIsMobileProjectSelectorExpanded(false)
+    }
+  }, [selectedDrillhole])
 
   // Fetch projects list and set default to Filo del Sol
   useEffect(() => {
@@ -162,6 +169,11 @@ export function Explorer() {
     if (filteredProjects.some(p => p.slug === selectedProject.slug)) return filteredProjects
     return [selectedProject, ...filteredProjects.filter((p: any) => p.slug !== selectedProject.slug)]
   }, [filteredProjects, selectedProject])
+
+  const handleProjectSelectBySlug = useCallback((slug: string) => {
+    const project = shownProjects.find((pr: any) => pr.slug === slug) || null
+    setSelectedProject(project)
+  }, [shownProjects])
 
   // Counts for UX clarity
   const totalCount = projects.length
@@ -259,6 +271,25 @@ export function Explorer() {
     ? `${projectMobileDescription.slice(0, 88).trim()}...`
     : projectMobileDescription
 
+  const projectSelectorOptions = shownProjects.map((p: any) => (
+    <option key={p.slug} value={p.slug}>{p.name}</option>
+  ))
+
+  const renderProjectSelector = ({ mobile = false, onSelected }: { mobile?: boolean; onSelected?: () => void } = {}) => (
+    <select
+      className={mobile
+        ? 'w-[58vw] min-w-[148px] max-w-[220px] truncate rounded-full border border-white/10 bg-slate-900/85 px-3 py-1.5 pr-7 text-xs font-medium text-slate-50 shadow-lg backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-amber-400/40'
+        : 'text-sm rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 bg-white/80 dark:bg-slate-900/80 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 transition-all duration-200'}
+      value={selectedProject?.slug ?? ''}
+      onChange={(e) => {
+        handleProjectSelectBySlug(e.target.value)
+        onSelected?.()
+      }}
+    >
+      {projectSelectorOptions}
+    </select>
+  )
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-950 dark:text-slate-50">
       {/* Header */}
@@ -274,20 +305,8 @@ export function Explorer() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <select
-              className="text-sm rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 bg-white/80 dark:bg-slate-900/80 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 transition-all duration-200"
-              value={selectedProject?.slug ?? ''}
-              onChange={(e) => {
-                const slug = e.target.value
-                const p = shownProjects.find(pr => pr.slug === slug) || null
-                setSelectedProject(p)
-              }}
-            >
-              {shownProjects.map(p => (
-                <option key={p.slug} value={p.slug}>{p.name}</option>
-              ))}
-            </select>
-            <span className="text-xs text-slate-400 ml-2 whitespace-nowrap">Showing <span className="font-semibold text-slate-700 dark:text-slate-200">{shownCount}</span> of {totalCount} projects</span>
+            {!isMobile && renderProjectSelector()}
+            {!isMobile && <span className="text-xs text-slate-400 ml-2 whitespace-nowrap">Showing <span className="font-semibold text-slate-700 dark:text-slate-200">{shownCount}</span> of {totalCount} projects</span>}
             <ThemeToggle />
           </div>
         </div>
@@ -349,10 +368,28 @@ export function Explorer() {
                 weather={(() => { console.log('[Explorer] passing weather to MapView:', weather); return weather })()}
                 project={selectedProject}
                 projects={shownProjects}
-                onProjectSelect={setSelectedProject}
+                onProjectSelect={(project) => {
+                  setSelectedProject(project)
+                  setIsMobileProjectSelectorExpanded(false)
+                }}
                 onWeather={handleWeather}
                 onIsMobileChange={setIsMobileFromMap}
               />
+
+              {isMobile && !isSheetOpen && selectedProject && (
+                <div className="absolute bottom-5 left-4 z-[10001]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileProjectSelectorExpanded(true)
+                      setIsSheetOpen(true)
+                    }}
+                    className="max-w-[160px] truncate rounded-full border border-white/10 bg-slate-900/75 px-3 py-1.5 text-[11px] font-medium text-slate-50 shadow-lg backdrop-blur-md"
+                  >
+                    {selectedProject.name}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Drillhole Analysis Panel and Assay Chart */}
@@ -467,6 +504,32 @@ export function Explorer() {
 
       {isMobile && (selectedDrillhole || selectedProject) && (
         <BottomSheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)}>
+          {selectedProject && (
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300/90">Project</div>
+                {!isMobileProjectSelectorExpanded && (
+                  <p className="mt-1 truncate text-sm font-medium text-slate-200">{selectedProject.name}</p>
+                )}
+              </div>
+              {isMobileProjectSelectorExpanded ? (
+                <div className="shrink-0">
+                  {renderProjectSelector({
+                    mobile: true,
+                    onSelected: () => setIsMobileProjectSelectorExpanded(false),
+                  })}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsMobileProjectSelectorExpanded(true)}
+                  className="shrink-0 rounded-full border border-white/10 bg-slate-900/75 px-3 py-1.5 text-[11px] font-medium text-slate-50 shadow-sm"
+                >
+                  Change
+                </button>
+              )}
+            </div>
+          )}
           {selectedDrillhole ? (
             <div className="space-y-3">
               <div>
