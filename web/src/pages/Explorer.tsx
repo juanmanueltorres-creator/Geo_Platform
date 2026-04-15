@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { TopDrillholes } from '@/components/TopDrillholes'
 import { ExplorationRadar } from '@/components/ExplorationRadar'
 import { ProjectOverview } from '@/components/ProjectOverview'
+import { EconomicScaleCard } from '@/components/EconomicScaleCard'
 import ProjectFilters from '@/components/ProjectFilters'
 import { rankProject } from '@/lib/ranking'
 import { api } from '@/lib/api'
@@ -270,6 +271,10 @@ export function Explorer() {
   const truncatedProjectDescription = projectMobileDescription.length > 88
     ? `${projectMobileDescription.slice(0, 88).trim()}...`
     : projectMobileDescription
+  const showEconomicScaleCard =
+    !isMobile &&
+    (selectedProject?.slug === 'filo-del-sol' ||
+      selectedProject?.name === 'Filo del Sol')
 
   const projectSelectorOptions = shownProjects.map((p: any) => (
     <option key={p.slug} value={p.slug}>{p.name}</option>
@@ -321,6 +326,7 @@ export function Explorer() {
           <div className="lg:col-span-2 flex flex-col">
             {/* Project Overview as contextual header */}
             {!isMobile && <ProjectOverview project={selectedProject} />}
+            {showEconomicScaleCard && <EconomicScaleCard />}
 
             {/* Warm-up Banner */}
             {!isMobile && showWarmup && (
