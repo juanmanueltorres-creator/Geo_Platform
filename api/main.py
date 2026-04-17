@@ -29,6 +29,20 @@ except ModuleNotFoundError as e:
         print("[GeoPlatform] Falla import absolute, error:", e2)
         raise
 
+try:
+    print("[GeoPlatform] Intentando importar market service (relative)")
+    from services.market_prices import get_live_metals_prices
+    print("[GeoPlatform] Importacion relative de market service OK")
+except ModuleNotFoundError as e:
+    print("[GeoPlatform] Falla import relative market service, error:", e)
+    try:
+        print("[GeoPlatform] Intentando importar market service (absolute)")
+        from api.services.market_prices import get_live_metals_prices
+        print("[GeoPlatform] Importacion absolute de market service OK")
+    except ModuleNotFoundError as e2:
+        print("[GeoPlatform] Falla import absolute market service, error:", e2)
+        raise
+
 # =============================
 # LOGGING SETUP
 # =============================
@@ -506,6 +520,11 @@ def ready():
 # =============================
 # WEATHER
 # =============================
+
+@app.get("/market/metals/live")
+def market_metals_live():
+    """Return normalized metals prices with cache and local fallback."""
+    return get_live_metals_prices()
 
 @app.get("/project/weather/current")
 def project_weather_current(

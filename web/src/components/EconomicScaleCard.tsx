@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react'
 import { Badge } from './ui/Badge'
 import { Card } from './ui/Card'
 import {
   filoDelSolEconomicScale,
-  filoDelSolEconomicScaleSummary,
 } from '@/data/economicScale'
+import { api, type LiveMetalsMarketResponse } from '@/lib/api'
+import { calculateGrossValueBreakdown } from '@/lib/economicScale'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -50,6 +52,13 @@ function formatContainedOunces(value: number): string {
   return `${quantityFormatter.format(value)} oz`
 }
 
+function getMarketBadgeLabel(market: LiveMetalsMarketResponse | null): string {
+  if (!market) return 'Fallback Market'
+  if (market.is_fallback || market.mode === 'fallback') return 'Fallback Market'
+  if (market.mode === 'cache') return 'Cached Market'
+  return 'Live Market'
+}
+
 function CompactStat({
   label,
   value,
@@ -68,14 +77,50 @@ function CompactStat({
 }
 
 export function EconomicScaleCard() {
-  const { marketSnapshot, resourceBase } = filoDelSolEconomicScale
-  const totalGrossValue = filoDelSolEconomicScaleSummary.combined.total
+  const { marketSnapshot: fallbackMarketSnapshot, resourceBase } = filoDelSolEconomicScale
+  const [marketData, setMarketData] = useState<LiveMetalsMarketResponse | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadMarketPrices = async () => {
+      try {
+        const response = await api.getLiveMetalsMarket()
+        if (!cancelled) {
+          setMarketData(response)
+        }
+      } catch {
+        if (!cancelled) {
+          setMarketData(null)
+        }
+      }
+    }
+
+    loadMarketPrices()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const marketSnapshot = marketData?.prices ?? fallbackMarketSnapshot
 
   const containedCopper =
     resourceBase.copper_mi_tonnes + resourceBase.copper_inferred_tonnes
   const containedGold = resourceBase.gold_mi_oz + resourceBase.gold_inferred_oz
   const containedSilver =
     resourceBase.silver_mi_oz + resourceBase.silver_inferred_oz
+
+  const grossValueBreakdown = calculateGrossValueBreakdown({
+    copperTonnes: containedCopper,
+    goldOunces: containedGold,
+    silverOunces: containedSilver,
+    copperUsdPerLb: marketSnapshot.copper_usd_per_lb,
+    goldUsdPerOz: marketSnapshot.gold_usd_per_oz,
+    silverUsdPerOz: marketSnapshot.silver_usd_per_oz,
+  })
+
+  const totalGrossValue = grossValueBreakdown.total
 
   return (
     <Card className="mb-5 overflow-hidden border-white/12 bg-[linear-gradient(145deg,rgba(15,23,42,0.92),rgba(15,23,42,0.72))] shadow-[0_18px_48px_rgba(2,6,23,0.28)]">
@@ -93,7 +138,7 @@ export function EconomicScaleCard() {
             color="amber"
             className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-slate-300 shadow-none"
           >
-            Live Market
+            {getMarketBadgeLabel(marketData)}
           </Badge>
         </div>
       </div>

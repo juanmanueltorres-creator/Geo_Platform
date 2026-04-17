@@ -1,0 +1,7 @@
+INFO:     Started server process [16128]
+INFO:     Waiting for application startup.
+2026-04-17 00:58:55,987 - geoplataform - INFO - Connection pool initialized successfully
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8010 (Press CTRL+C to quit)
+2026-04-17 00:59:00,935 - geoplataform.market - WARNING - Metals provider unavailable, using fallback snapshot: timed out
+2026-04-17 00:59:04,419 - geoplataform.market - WARNING - Metals provider unavailable, using fallback snapshot: timed out

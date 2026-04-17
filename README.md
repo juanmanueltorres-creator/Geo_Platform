@@ -9,7 +9,7 @@ testing, CI, security, and incremental improvements.
 
 ## 🧭 Overview
 
-GeoPlatform es una plataforma full-stack para la gestión, visualización y análisis de datos de exploración minera, integrando información de perforaciones, muestreo, geología y estructuras en un entorno interactivo y escalable.
+San Juan Geo es una plataforma full-stack para la gestión, visualización y análisis de datos de exploración minera, integrando información de perforaciones, muestreo, geología y estructuras en un entorno interactivo y escalable.
 
 ---
 
@@ -21,7 +21,7 @@ En exploración minera, se generan grandes volúmenes de datos espaciales y de i
 
 ## 💡 Motivation
 
-El proyecto surge de la brecha entre la formación académica en geociencias y los flujos de trabajo reales de datos en la industria. Busca acercar prácticas de software profesional al manejo de datos geológicos.
+El proyecto busca acercar prácticas de software profesional al manejo de datos geológicos.
 
 ---
 

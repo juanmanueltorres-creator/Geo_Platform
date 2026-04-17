@@ -1,6 +1,18 @@
 import axios from 'axios'
 import type { GeoJSONFeatureCollection, DrillholeSummary, AssayResponse, AlterationResponse, GeologySummary } from '@/types'
 
+export interface LiveMetalsMarketResponse {
+  source: string
+  mode: string
+  as_of: string
+  is_fallback: boolean
+  prices: {
+    copper_usd_per_lb: number
+    gold_usd_per_oz: number
+    silver_usd_per_oz: number
+  }
+}
+
 const API_URL = import.meta.env.VITE_API_URL || 'https://geo-plataform.onrender.com'
 
 const apiClient = axios.create({
@@ -27,6 +39,11 @@ apiClient.interceptors.response.use(
 )
 
 export const api = {
+  getLiveMetalsMarket: async (): Promise<LiveMetalsMarketResponse> => {
+    const response = await apiClient.get('/market/metals/live')
+    return response.data
+  },
+
   // Get all drillhole locations (extended GeoJSON with depth + geometry)
   getDrillholeLocations: async (): Promise<GeoJSONFeatureCollection> => {
     const response = await apiClient.get('/geospatial/drillholes-geojson')
