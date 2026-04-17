@@ -55,6 +55,7 @@ function formatContainedOunces(value: number): string {
 function getMarketBadgeLabel(market: LiveMetalsMarketResponse | null): string {
   if (!market) return 'Fallback Market'
   if (market.is_fallback || market.mode === 'fallback') return 'Fallback Market'
+  if (market.mode === 'partial_live') return 'Mixed Market'
   if (market.mode === 'cache') return 'Cached Market'
   return 'Live Market'
 }
@@ -148,6 +149,11 @@ export function EconomicScaleCard() {
           <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
             Market Prices
           </div>
+          {marketData?.mode === 'partial_live' && (
+            <div className="mb-2 text-[11px] leading-4 text-slate-400">
+              Gold and silver are live. Copper uses fallback pricing.
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-2">
             <CompactStat
               label="Copper"
