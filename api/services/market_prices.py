@@ -18,7 +18,6 @@ DEFAULT_CACHE_TTL_SECONDS = 300
 DEFAULT_TIMEOUT_SECONDS = 5.0
 DEFAULT_METALS_API_BASE_URL = "https://api.metalpriceapi.com/v1/latest"
 CACHE_KEY = "market:metals:live"
-POUNDS_PER_METRIC_TONNE = 2204.62
 
 
 class TTLCache:
@@ -49,6 +48,24 @@ def _iso_now_utc() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _normalize_metalpriceapi_url(base_url: str) -> str:
+    normalized = base_url.strip().rstrip("/")
+    if not normalized:
+        return DEFAULT_METALS_API_BASE_URL
+    if normalized.endswith("/latest"):
+        return normalized
+    if normalized.endswith("/v1"):
+        return f"{normalized}/latest"
+    return normalized
+
+
+def _mask_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    masked = dict(params)
+    if "api_key" in masked:
+        masked["api_key"] = "***"
+    return masked
+
+
 def _get_env_int(name: str, default: int) -> int:
     raw = os.getenv(name, "").strip()
     if not raw:
@@ -73,54 +90,58 @@ def _get_env_float(name: str, default: float) -> float:
         return default
 
 
-def _coerce_price(value: Any, field_name: str) -> float:
+def _coerce_positive_number(value: Any, field_name: str) -> float:
     if value is None:
         raise ValueError(f"Missing price field: {field_name}")
 
-    price = round(float(value), 2)
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid price field: {field_name}") from exc
+
+    if parsed <= 0:
+        raise ValueError(f"Invalid price field: {field_name}")
+    return parsed
+
+
+def _parse_usd_base_rate_to_usd_per_unit(value: Any, field_name: str) -> float:
+    rate = _coerce_positive_number(value, field_name)
+    price = round(1.0 / rate, 2)
     if price <= 0:
         raise ValueError(f"Invalid price field: {field_name}")
     return price
 
 
-def _convert_metric_ton_to_pounds_price(value: Any) -> float:
-    usd_per_metric_ton = float(value)
-    if usd_per_metric_ton <= 0:
-        raise ValueError("Invalid price field: XCU")
-    return round(usd_per_metric_ton / POUNDS_PER_METRIC_TONNE, 2)
-
-
 def _get_rates(payload: Dict[str, Any]) -> Dict[str, Any]:
     if payload.get("success") is not True:
+        logger.warning("metalpriceapi full response: %s", payload)
         raise ValueError("metalpriceapi returned success=false")
 
     rates = payload.get("rates")
     if not isinstance(rates, dict):
         raise ValueError("metalpriceapi response is missing rates")
 
+    logger.info(
+        "metalpriceapi success response: base=%s rates=%s",
+        payload.get("base"),
+        {key: rates.get(key) for key in ("XAU", "XAG")},
+    )
+
     return rates
 
 
-def _is_paid_plan_restriction(value: Any) -> bool:
-    return isinstance(value, str) and "paid plan" in value.lower()
-
-
-def _extract_metalpriceapi_prices(payload: Dict[str, Any]) -> Dict[str, float]:
+def _extract_partial_live_prices(payload: Dict[str, Any]) -> Dict[str, Any]:
     rates = _get_rates(payload)
+    gold_price = _parse_usd_base_rate_to_usd_per_unit(rates.get("XAU"), "XAU")
+    silver_price = _parse_usd_base_rate_to_usd_per_unit(rates.get("XAG"), "XAG")
 
-    return {
-        "copper_usd_per_lb": _convert_metric_ton_to_pounds_price(rates.get("XCU")),
-        "gold_usd_per_oz": _coerce_price(rates.get("XAU"), "XAU"),
-        "silver_usd_per_oz": _coerce_price(rates.get("XAG"), "XAG"),
-    }
-
-
-def _extract_partial_live_prices(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    rates = _get_rates(payload)
-    xcu_value = rates.get("XCU")
-
-    if not _is_paid_plan_restriction(xcu_value):
-        return None
+    logger.info(
+        "Parsed market rates successfully: xau_ok=%s xag_ok=%s gold_usd_per_oz=%s silver_usd_per_oz=%s",
+        gold_price > 0,
+        silver_price > 0,
+        gold_price,
+        silver_price,
+    )
 
     fallback_snapshot = build_fallback_snapshot()
 
@@ -130,8 +151,8 @@ def _extract_partial_live_prices(payload: Dict[str, Any]) -> Optional[Dict[str, 
         "as_of": _iso_now_utc(),
         "prices": {
             "copper_usd_per_lb": fallback_snapshot["prices"]["copper_usd_per_lb"],
-            "gold_usd_per_oz": _coerce_price(rates.get("XAU"), "XAU"),
-            "silver_usd_per_oz": _coerce_price(rates.get("XAG"), "XAG"),
+            "gold_usd_per_oz": gold_price,
+            "silver_usd_per_oz": silver_price,
         },
         "is_fallback": False,
         "partial_fallback": {
@@ -147,7 +168,7 @@ class MetalsAPIProvider:
     source_name = "metalpriceapi"
 
     def __init__(self, base_url: str, api_key: str, timeout_seconds: float):
-        self.base_url = base_url.strip()
+        self.base_url = _normalize_metalpriceapi_url(base_url)
         self.api_key = api_key.strip()
         self.timeout_seconds = timeout_seconds
 
@@ -155,30 +176,36 @@ class MetalsAPIProvider:
         if not self.base_url:
             raise RuntimeError("METALS_API_BASE_URL is not configured")
 
+        params = {
+            "api_key": self.api_key,
+            "base": "USD",
+            "currencies": "XAU,XAG",
+        }
+
+        logger.info(
+            "Market provider request starting: api_key_present=%s base_url=%s params=%s",
+            bool(self.api_key),
+            self.base_url,
+            _mask_params(params),
+        )
+
         response = httpx.get(
             self.base_url,
-            params={
-                "api_key": self.api_key,
-                "base": "USD",
-                "currencies": "XAU,XAG,XCU",
-            },
+            params=params,
             headers={"Accept": "application/json"},
             timeout=self.timeout_seconds,
         )
+        logger.info("Market provider response status: %s", response.status_code)
+        if not response.is_success:
+            logger.warning(
+                "Market provider non-success response body: %s",
+                response.text,
+            )
         response.raise_for_status()
         payload = response.json()
-        partial_live = _extract_partial_live_prices(payload)
-
-        if partial_live:
-            return partial_live
-
-        return {
-            "source": self.source_name,
-            "mode": "live",
-            "as_of": _iso_now_utc(),
-            "prices": _extract_metalpriceapi_prices(payload),
-            "is_fallback": False,
-        }
+        normalized = _extract_partial_live_prices(payload)
+        logger.info("Market provider returning mode=%s", normalized.get("mode"))
+        return normalized
 
 
 def _build_provider() -> MetalsAPIProvider:
@@ -205,6 +232,7 @@ def get_live_metals_prices() -> Dict[str, Any]:
     now_ts = time.time()
 
     if raw and raw.get("expires_at", 0) > now_ts and "value" in raw:
+        logger.info("Market service returning mode=cache")
         return _cached_response(raw["value"])
 
     provider = _build_provider()
@@ -212,7 +240,9 @@ def get_live_metals_prices() -> Dict[str, Any]:
     try:
         normalized = provider.fetch()
         cache.set(CACHE_KEY, normalized, _cache_ttl_seconds())
+        logger.info("Market service returning mode=%s", normalized.get("mode"))
         return normalized
     except Exception as exc:
         logger.warning("Metals provider unavailable, using fallback snapshot: %s", exc)
+        logger.info("Market service returning mode=fallback")
         return build_fallback_snapshot()

@@ -1,0 +1,8 @@
+[GeoPlatform] main.py loaded: __name__= main
+[GeoPlatform] Intentando importar weather (relative)
+[GeoPlatform] Importación relative de weather OK
+[GeoPlatform] Intentando importar market service (relative)
+[GeoPlatform] Importacion relative de market service OK
+INFO:     127.0.0.1:61650 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61650 - "OPTIONS /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61650 - "OPTIONS /health HTTP/1.1" 200 OK

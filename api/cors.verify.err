@@ -1,0 +1,5 @@
+INFO:     Started server process [7164]
+INFO:     Waiting for application startup.
+2026-04-18 03:30:36,519 - geoplataform - INFO - Connection pool initialized successfully
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8012 (Press CTRL+C to quit)

@@ -13,6 +13,9 @@ import logging
 from dotenv import load_dotenv
 import httpx
 from datetime import datetime, timezone, timedelta
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
+
 # LOGGING DE ARRANQUE PARA DEBUG EN RENDER
 print("[GeoPlatform] main.py loaded: __name__=", __name__)
 try:
@@ -54,12 +57,6 @@ logging.basicConfig(
 logger = logging.getLogger("geoplataform")
 
 # =============================
-# LOAD ENV
-# =============================
-
-load_dotenv()
-
-# =============================
 # APP INIT
 # =============================
 
@@ -77,6 +74,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"^https://.*\.vercel\.app$|^http://localhost.*",
     allow_origins=[
+        "http://localhost:3000",
         "https://geo-plataform.onrender.com",
         "https://geo-platform-cyan.vercel.app",
         "http://127.0.0.1:3000",
